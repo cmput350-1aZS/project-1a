@@ -1,6 +1,8 @@
 #include "GameEngine.h"
 #include "GameContext.h"
 #include "DrawContext.h"
+#include "CollisionObject.h"
+#include "GraphicsObject.h"
 
 /// @brief
 namespace CMPUT350 {
@@ -42,7 +44,7 @@ void GameEngine::Run() {
     while (mWindow->isOpen())  // window is open
     {
         GameContext context;
-        context.EngineContext = this; // pointer to current GameEngine obj
+        context.mEngineView = this; // pointer to current GameEngine obj
         DrawContext screenContext(mWindow, mFont);
         context.ScreenContext = &screenContext;
         // 0. Remove any objects that are now dead
@@ -68,7 +70,7 @@ void GameEngine::Run() {
         
         // 2. Process events
         while (const std::optional event = mWindow->pollEvent()) { // checks all events done by player
-            if (event->is<sf::Event::Closed()) { // checks if window being closed was an event
+            if (event->is<sf::Event::Closed>()) { // checks if window being closed was an event
                 mWindow->close();
             }
             else if (const auto* keyPressed = event->getIf<sf::Event::TextEntered>()) { // checks if event done was a keyboard input (textentered)
