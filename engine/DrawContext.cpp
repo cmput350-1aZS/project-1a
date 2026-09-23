@@ -2,9 +2,23 @@
 
 namespace CMPUT350 {
 
+/**
+ * @brief Constructs a DrawContext bound to a window and a font
+ *
+ * @param window The render window all draw calls will target
+ * @param font The font used by DrawText and DrawCenteredText
+ */
 DrawContext::DrawContext(std::shared_ptr<sf::RenderWindow> window, std::shared_ptr<sf::Font> font)
     : mWindow(window), mFont(font) {}
 
+/**
+ * @brief Draws text centered on a given point
+ *
+ * @param text The string to draw
+ * @param pixelSize The character size, in pixels
+ * @param p The point the text is centered on
+ * @param c The fill color of the text
+ */
 void DrawContext::DrawCenteredText(const std::string &text, int pixelSize, Point2D p, RGBColor c) {
     sf::Text textShapeCentered(*mFont);
     textShapeCentered.setString(text);
@@ -16,6 +30,14 @@ void DrawContext::DrawCenteredText(const std::string &text, int pixelSize, Point
     mWindow->draw(textShapeCentered);
 }
 
+/**
+ * @brief Draws text with its top-left corner at a given point
+ *
+ * @param text The string to draw
+ * @param pixelSize The character size, in pixels
+ * @param p The top-left position of the text
+ * @param c The fill color of the text
+ */
 void DrawContext::DrawText(const std::string &text, int pixelSize, Point2D p, RGBColor c) {
     sf::Text textShape(*mFont);
     textShape.setString(text);
@@ -25,6 +47,13 @@ void DrawContext::DrawText(const std::string &text, int pixelSize, Point2D p, RG
     mWindow->draw(textShape);
 }
 
+/**
+ * @brief Draws a filled circle centered on a given point
+ *
+ * @param p The center of the circle
+ * @param radius The radius of the circle, in pixels
+ * @param c The fill color of the circle
+ */
 void DrawContext::DrawCircle(Point2D p, float radius, RGBColor c) {
     sf::CircleShape shape(radius);
     shape.setOrigin({radius, radius}); // Moves anchor dot goes at the exact middle of this circle's own private box
@@ -33,6 +62,12 @@ void DrawContext::DrawCircle(Point2D p, float radius, RGBColor c) {
     mWindow->draw(shape);
 }   
 
+/**
+ * @brief Draws a filled rectangle
+ *
+ * @param r The rectangle's position and size
+ * @param c The fill color of the rectangle
+ */
 void DrawContext::DrawRect(Rect r, RGBColor c) {
     sf::RectangleShape shape({r.width, r.height});
     shape.setPosition({r.topLeft.x, r.topLeft.y});
@@ -40,6 +75,13 @@ void DrawContext::DrawRect(Rect r, RGBColor c) {
     mWindow->draw(shape);
 }
 
+/**
+ * @brief Draws an unfilled rectangle outline
+ *
+ * @param r The rectangle's position and size
+ * @param width The outline thickness, in pixels
+ * @param c The color of the outline
+ */
 void DrawContext::FrameRect(Rect r, float width, RGBColor c) {
     sf::RectangleShape shape({r.width, r.height});
     shape.setPosition({r.topLeft.x, r.topLeft.y});
@@ -101,8 +143,14 @@ void DrawContext::DrawLine(Point2D from, Point2D to, float width, RGBColor c) {
 
 }
 
+/**
+ * @brief Returns the window's current width, in pixels
+ */
 int DrawContext::GetWindowWidth() { return mWindow->getSize().x; }
 
+/**
+ * @brief Returns the window's current height, in pixels
+ */
 int DrawContext::GetWindowHeight() { return mWindow->getSize().y; }
 
 }  // namespace CMPUT350
