@@ -54,6 +54,8 @@ void Bullet::Update(CMPUT350::GameContext* context)
     // The box spans the path travelled this frame, so a fast bullet cannot skip over a thin target
     mBounds = CMPUT350::Rect(old, mLocation);
 
+    mBounds.Inset(-2); // Negative inset grows the box by 2 pixels per side, so a straight-up bullet has some width to overlap with
+
     // y = 0 is the top of the screen, so y < 0 means the bullet has flown off it
     if (mLocation.y < 0) {
         Kill();
