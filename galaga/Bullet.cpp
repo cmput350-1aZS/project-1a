@@ -35,7 +35,7 @@ bool Bullet::IsPlayerBullet()
 
 void Bullet::Initialize(CMPUT350::GameContext* context)
 {
-    
+    // Nothing to do: the constructor already sets up everything a bullet needs
 }
 
 /**
@@ -66,7 +66,7 @@ void Bullet::Update(CMPUT350::GameContext* context)
 
 void Bullet::LateUpdate(CMPUT350::GameContext* context)
 {
-   
+    // Nothing to do: all of a bullet's per-frame work happens in Update
 }
 
 /**
