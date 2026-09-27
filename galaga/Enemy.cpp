@@ -40,7 +40,7 @@ void Enemy::RenderForeground(CMPUT350::GameContext* context) {
 /**
  * @brief Called by the engine when this enemy's box overlaps another collision object
  *
- * The enemy dies when a Bullet hits it and ignores everything else, such as the player
+ * The enemy dies when a player Bullet hits it and ignores everything else, such as the player
  * or other enemies.
  *
  * @param obj The object this enemy overlapped
@@ -49,7 +49,7 @@ void Enemy::CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& obj
     // dynamic_pointer_cast returns nullptr unless obj really is a Bullet
     std::shared_ptr<Bullet> bullet = std::dynamic_pointer_cast<Bullet>(obj);
 
-    if (bullet != nullptr) {
+    if (bullet != nullptr && bullet->IsPlayerBullet()) {
         Kill();
     }
 }
