@@ -12,7 +12,7 @@
 Enemy::Enemy(CMPUT350::Point2D loc) {
     mEnemyLocation = loc;
     mEnemyAlive = true;
-    mEnemyBounds = CMPUT350::Rect(loc, 15.0f);
+    mEnemyBounds = CMPUT350::Rect(loc, 8.0f);
 }
 
 void Enemy::Initialize(CMPUT350::GameContext* context) {}
