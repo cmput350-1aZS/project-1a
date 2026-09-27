@@ -18,9 +18,9 @@ bool GameObject::HandleKeyEvent(GameContext *context, char key) {
     return false; 
 }
 bool GameObject::IsAlive() const { 
-    return true; 
+    return alive; 
 }
 void GameObject::Kill() {
-    
+    alive = false;
 }
 }  // namespace CMPUT350

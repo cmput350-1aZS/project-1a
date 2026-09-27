@@ -2,6 +2,10 @@
 #define PLAYER_H
 
 #include "CollisionObject.h"
+#include <memory>
+#include <vector>
+
+class Bullet;
 
 class Player : public CMPUT350::CollisionObject
 {
@@ -24,6 +28,11 @@ public:
     // Collision Object Functions
     void CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& obj) override;
     const CMPUT350::Rect& GetBounds() override;
+
+private:
+    CMPUT350::Point2D mLoc;
+    bool mAlive; // mAlive because it is overridden above
+    std::vector<std::weak_ptr<Bullet>> mBullets; // player's bullet vector to observe but not own bullets
 
 };
 
