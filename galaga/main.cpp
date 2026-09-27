@@ -125,7 +125,7 @@ int main()
     else
     {
         CMPUT350::GameEngine engine(768, 1024, "Galaga");
-        auto player = std::make_shared<Player>(CMPUT350::Point2D(768 / 2, 800)); // changed to 800 from 900 because local machine would display in 768 x 865
+        auto player = std::make_shared<Player>(CMPUT350::Point2D(768 / 2, 900)); // on mac changed to 800 from 900 because local machine would display in 768 x 865
         engine.AddGameObject(player);
         engine.AddGameObject(std::make_shared<Stars>(250, CMPUT350::Rect(0, 0, 768, 1024)));
         for (int x = 0; x < 40; x++) // changed to 40 enemies from 4
