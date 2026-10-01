@@ -142,7 +142,7 @@ void GameEngine::Run() {
                 if (objB == nullptr) {
                     continue;
                 }
-
+                // with help from OpenAI: https://chatgpt.com/s/t_6abdcb6da1f08191a932fead94213877 with prompt: implementation of if 2 rectangles make a positive overlapped area with rectangles, how to detect that 
                 // get each obj's collission rectangle bounds
                 // using copies to not modify rectangle that will happen
                 Rect boundsA = objA->GetBounds();
@@ -155,6 +155,7 @@ void GameEngine::Run() {
                     // notifies both objects about collision
                     objA->CollisionEnter(objB);
                     objB->CollisionEnter(objA);
+                /// OpenAI Implementation ends here
                 }
             }
         }
