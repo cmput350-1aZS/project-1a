@@ -104,19 +104,35 @@ void Player::RenderBackground(CMPUT350::GameContext* context)
 }
 
 /**
+ * @brief Returns the player's screen position, which the engine uses as the ship's local origin
+ */
+CMPUT350::Point2D Player::GetLocation() const {
+    return mLoc;
+}
+
+/**
+ * @brief Returns the ship's rotation in radians; the player ship never rotates
+ */
+float Player::GetRotation() const {
+    return 0;
+}
+
+
+/**
  * @brief Renders the player's ship in the foreground.
  *
- * The ship is drawn using four lines that form a triangular outline.
+ * The ship is drawn using four lines that form a triangular outline. The points are relative to
+ * the ship's centre (0, 0); the engine's draw context shifts them to GetLocation().
  *
  * @param context The game context containing access to the screen.
  */
 void Player::RenderForeground(CMPUT350::GameContext* context)
 {
     // triangle to form ship
-    context->ScreenContext->DrawLine(CMPUT350::Point2D(mLoc.x, mLoc.y-20), CMPUT350::Point2D(mLoc.x-20, mLoc.y+20), 4, CMPUT350::Colors::white); // top pt
-    context->ScreenContext->DrawLine(CMPUT350::Point2D(mLoc.x-20, mLoc.y+20), CMPUT350::Point2D(mLoc.x, mLoc.y+10), 4, CMPUT350::Colors::white); // bottom left
-    context->ScreenContext->DrawLine(CMPUT350::Point2D(mLoc.x, mLoc.y+10), CMPUT350::Point2D(mLoc.x+20, mLoc.y+20), 4, CMPUT350::Colors::white); // bottom centre
-    context->ScreenContext->DrawLine(CMPUT350::Point2D(mLoc.x+20, mLoc.y+20), CMPUT350::Point2D(mLoc.x, mLoc.y-20), 4, CMPUT350::Colors::white); // bottom right
+    context->ScreenContext->DrawLine(CMPUT350::Point2D(0, -20), CMPUT350::Point2D(-20, 20), 4, CMPUT350::Colors::white); // top pt
+    context->ScreenContext->DrawLine(CMPUT350::Point2D(-20, 20), CMPUT350::Point2D(0, 10), 4, CMPUT350::Colors::white); // bottom left
+    context->ScreenContext->DrawLine(CMPUT350::Point2D(0, 10), CMPUT350::Point2D(20, 20), 4, CMPUT350::Colors::white); // bottom centre
+    context->ScreenContext->DrawLine(CMPUT350::Point2D(20, 20), CMPUT350::Point2D(0, -20), 4, CMPUT350::Colors::white); // bottom right
 }
 
 /**

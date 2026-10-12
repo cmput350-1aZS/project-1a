@@ -22,6 +22,9 @@ public:
     void RenderBackground(CMPUT350::GameContext* context) override;
     void RenderForeground(CMPUT350::GameContext* context) override;
 
+    CMPUT350::Point2D GetLocation() const override;
+    float GetRotation() const override; 
+
     // Collision Object Functions
     void CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& obj) override;
     const CMPUT350::Rect& GetBounds() override;
@@ -32,7 +35,6 @@ private:
     bool mPlayerBullet;           // True if fired by the player, false if by an enemy
     CMPUT350::Rect mBounds;       // Box covering the previous and current position, used for collisions
     bool mBulletAlive;            // False once Kill has been called; the engine then removes the bullet
-
 
 };
 #endif // BULLET_H

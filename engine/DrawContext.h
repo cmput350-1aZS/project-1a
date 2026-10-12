@@ -31,8 +31,8 @@ const RGBColor grey(200, 200, 200);
 class DrawContext {
 public:
     DrawContext(std::shared_ptr<sf::RenderWindow> mWindow, std::shared_ptr<sf::Font> font);
-    void DrawText(const std::string &text, int pixelSize, Point2D p, RGBColor c);
-    void DrawCenteredText(const std::string &text, int pixelSize, Point2D p, RGBColor c);
+    void DrawText(const std::string& text, int pixelSize, Point2D p, RGBColor c);
+    void DrawCenteredText(const std::string& text, int pixelSize, Point2D p, RGBColor c);
     void DrawCircle(Point2D p, float radius, RGBColor c);
     void DrawRect(Rect r, RGBColor c);
     void FrameRect(Rect r, float width, RGBColor c);
@@ -43,6 +43,16 @@ public:
 private:
     std::shared_ptr<sf::RenderWindow> mWindow;
     std::shared_ptr<sf::Font> mFont;
+    Point2D mOffset;        // Screen position of the current object's local origin (0, 0)
+    float mRotation = 0;    // Current object's rotation about that origin, in radians
+
+    // Only the engine may change the transform, so game code cannot move it mid-draw
+    friend class GameEngine;
+    void SetContextOffset(Point2D p);        // Set where the object's local origin lands on screen
+    void SetContextRotation(float rotation); // Set the object's rotation, in radians
+    Point2D Transform(Point2D p);            // Local object space -> screen space
+	Point2D ReverseTransform(Point2D p);     // Screen space -> local object space
+
 };
 
 }  // namespace CMPUT350

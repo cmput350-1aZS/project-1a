@@ -1,4 +1,5 @@
 #include "Bullet.h"
+
 #include "Enemy.h"
 
 /**
@@ -8,8 +9,7 @@
  * @param heading Distance the bullet moves per frame (x and y); a negative y moves it up
  * @param player True if the player fired this bullet, false if an enemy did
  */
-Bullet::Bullet(CMPUT350::Point2D location, CMPUT350::Point2D heading, bool player)
-{
+Bullet::Bullet(CMPUT350::Point2D location, CMPUT350::Point2D heading, bool player) {
     mLocation = location;
     mHeading = heading;
     mPlayerBullet = player;
@@ -24,17 +24,14 @@ Bullet::Bullet(CMPUT350::Point2D location, CMPUT350::Point2D heading, bool playe
  *
  * @return True if the player fired it, false if an enemy did
  */
-bool Bullet::IsPlayerBullet()
-{
+bool Bullet::IsPlayerBullet() {
     if (mPlayerBullet) {
         return true;
     }
     return false;
 }
 
-
-void Bullet::Initialize(CMPUT350::GameContext* context)
-{
+void Bullet::Initialize(CMPUT350::GameContext* context) {
     // Nothing to do: the constructor already sets up everything a bullet needs
 }
 
@@ -46,26 +43,23 @@ void Bullet::Initialize(CMPUT350::GameContext* context)
  *
  * @param context Unused
  */
-void Bullet::Update(CMPUT350::GameContext* context)
-{
+void Bullet::Update(CMPUT350::GameContext* context) {
     // Remember where the bullet was before it moves
     CMPUT350::Point2D old = mLocation;
     mLocation += mHeading;
     // The box spans the path travelled this frame, so a fast bullet cannot skip over a thin target
     mBounds = CMPUT350::Rect(old, mLocation);
 
-    mBounds.Inset(-2); // Negative inset grows the box by 2 pixels per side, so a straight-up bullet has some width to overlap with
+    mBounds.Inset(-2);  // Negative inset grows the box by 2 pixels per side, so a straight-up
+                        // bullet has some width to overlap with
 
     // y = 0 is the top of the screen, so y < 0 means the bullet has flown off it
     if (mLocation.y < 0) {
         Kill();
     }
-
 }
 
-
-void Bullet::LateUpdate(CMPUT350::GameContext* context)
-{
+void Bullet::LateUpdate(CMPUT350::GameContext* context) {
     // Nothing to do: all of a bullet's per-frame work happens in Update
 }
 
@@ -76,33 +70,41 @@ void Bullet::LateUpdate(CMPUT350::GameContext* context)
  * @param key Unused
  * @return Always false, meaning the bullet did not use the key
  */
-bool Bullet::HandleKeyEvent(CMPUT350::GameContext* context, char key)
-{
-    return false;
-}
+bool Bullet::HandleKeyEvent(CMPUT350::GameContext* context, char key) { return false; }
 
 /**
  * @brief Draws the background layer; a bullet has no background graphics
  *
  * @param context Unused
  */
-void Bullet::RenderBackground(CMPUT350::GameContext* context)
-{
+void Bullet::RenderBackground(CMPUT350::GameContext* context) {
     // Nothing to do: the bullet is drawn in the foreground pass only
 }
 
 /**
  * @brief Draws the bullet as a short line ending at its current position
  *
- * The other end of the line is one step behind, giving the bullet a small tail.
+ * The other end of the line is one step behind, giving the bullet a small tail. The line is drawn
+ * from (0, 0), the bullet's local origin; the engine's draw context shifts it to GetLocation().
  *
  * @param context Provides the draw context used to draw the line
  */
-void Bullet::RenderForeground(CMPUT350::GameContext* context)
-{
-    // AI-assisted: this DrawLine call was provided by Claude when asked how to draw the bullet as a line
-    context->ScreenContext->DrawLine(mLocation, mLocation - mHeading, 2, CMPUT350::Colors::blue);
+void Bullet::RenderForeground(CMPUT350::GameContext* context) {
+    // AI-assisted: this DrawLine call was provided by Claude when asked how to draw the bullet as a
+    // line
+    context->ScreenContext->DrawLine(CMPUT350::Point2D(0, 0), CMPUT350::Point2D(0, 0) - mHeading, 2,
+                                     CMPUT350::Colors::blue);
 }
+
+/**
+ * @brief Returns the bullet's screen position, which the engine uses as its local origin
+ */
+CMPUT350::Point2D Bullet::GetLocation() const { return mLocation; }
+
+/**
+ * @brief Returns the bullet's rotation in radians; bullets never rotate
+ */
+float Bullet::GetRotation() const { return 0; }
 
 /**
  * @brief Called by the engine when this bullet's box overlaps another collision object
@@ -112,32 +114,26 @@ void Bullet::RenderForeground(CMPUT350::GameContext* context)
  *
  * @param obj The object this bullet overlapped
  */
-void Bullet::CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& obj)
-{
+void Bullet::CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& obj) {
     // dynamic_pointer_cast returns nullptr unless obj really is an Enemy
     std::shared_ptr<Enemy> enemy = std::dynamic_pointer_cast<Enemy>(obj);
 
     if (enemy != nullptr) {
         Kill();
     }
-
 }
 
 /**
  * @brief Marks the bullet as dead so the engine removes it at the start of the next frame
  */
-void Bullet::Kill()
-{
-    mBulletAlive=false;
-}
+void Bullet::Kill() { mBulletAlive = false; }
 
 /**
  * @brief Reports whether the bullet is still active
  *
  * @return True while the bullet is alive, false once Kill has been called
  */
-bool Bullet::IsAlive() const
-{
+bool Bullet::IsAlive() const {
     if (mBulletAlive) {
         return true;
     }
@@ -149,7 +145,5 @@ bool Bullet::IsAlive() const
  *
  * @return The box covering the bullet's previous and current position
  */
-const CMPUT350::Rect& Bullet::GetBounds()
-{
-    return mBounds;
-}
+const CMPUT350::Rect& Bullet::GetBounds() { return mBounds; }
+

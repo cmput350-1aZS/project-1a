@@ -84,6 +84,10 @@ public:
      */
     void RenderForeground(CMPUT350::GameContext* context) override;
 
+    CMPUT350::Point2D GetLocation() const override;
+
+    float GetRotation() const override; 
+
 
     // Collision Object Functions
 

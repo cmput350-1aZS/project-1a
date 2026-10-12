@@ -32,3 +32,21 @@ void Stars::RenderBackground(CMPUT350::GameContext* context)
             star.y -= mBounds.height;
     }
 }
+
+
+/**
+ * @brief Returns the screen position of the stars' local origin
+ *
+ * Always (0, 0): the star positions are stored in screen coordinates, so no shift is needed.
+ */
+CMPUT350::Point2D Stars::GetLocation() const {
+    return CMPUT350::Point2D(0, 0);
+}
+
+/**
+ * @brief Returns the stars' rotation in radians; the star field never rotates
+ */
+float Stars::GetRotation() const {
+    return 0;
+}
+

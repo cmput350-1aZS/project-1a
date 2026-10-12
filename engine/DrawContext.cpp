@@ -1,4 +1,5 @@
 #include "DrawContext.h"
+#include <cmath>
 
 namespace CMPUT350 {
 
@@ -26,7 +27,8 @@ void DrawContext::DrawCenteredText(const std::string &text, int pixelSize, Point
     textShapeCentered.setFillColor(sf::Color(c.r, c.g,  c.b));
     sf::FloatRect bounds = textShapeCentered.getLocalBounds(); // Rendered text's own local box (position + size), needed to compute its center
     textShapeCentered.setOrigin(bounds.position + bounds.size / 2.f); // Anchor = center of text's box, so setPosition below centers text instead of anchoring its corner
-    textShapeCentered.setPosition({p.x, p.y});
+    Point2D transformedPos = Transform(p);
+    textShapeCentered.setPosition({transformedPos.x, transformedPos.y});
     mWindow->draw(textShapeCentered);
 }
 
@@ -43,7 +45,8 @@ void DrawContext::DrawText(const std::string &text, int pixelSize, Point2D p, RG
     textShape.setString(text);
     textShape.setCharacterSize(pixelSize);
     textShape.setFillColor(sf::Color(c.r, c.g,  c.b));
-    textShape.setPosition({p.x, p.y});
+    Point2D transformedPos = Transform(p);
+    textShape.setPosition({transformedPos.x, transformedPos.y});
     mWindow->draw(textShape);
 }
 
@@ -57,7 +60,8 @@ void DrawContext::DrawText(const std::string &text, int pixelSize, Point2D p, RG
 void DrawContext::DrawCircle(Point2D p, float radius, RGBColor c) {
     sf::CircleShape shape(radius);
     shape.setOrigin({radius, radius}); // Moves anchor dot goes at the exact middle of this circle's own private box
-    shape.setPosition({p.x, p.y});     // Move circle to position p
+    Point2D transformedPos = Transform(p);
+    shape.setPosition({transformedPos.x, transformedPos.y}); // Move circle to the screen position of p
     shape.setFillColor(sf::Color(c.r, c.g, c.b));
     mWindow->draw(shape);
 }   
@@ -70,7 +74,8 @@ void DrawContext::DrawCircle(Point2D p, float radius, RGBColor c) {
  */
 void DrawContext::DrawRect(Rect r, RGBColor c) {
     sf::RectangleShape shape({r.width, r.height});
-    shape.setPosition({r.topLeft.x, r.topLeft.y});
+    Point2D transformedTopLeft = Transform(r.topLeft);
+    shape.setPosition({transformedTopLeft.x, transformedTopLeft.y});
     shape.setFillColor(sf::Color(c.r, c.g, c.b));
     mWindow->draw(shape);
 }
@@ -84,7 +89,8 @@ void DrawContext::DrawRect(Rect r, RGBColor c) {
  */
 void DrawContext::FrameRect(Rect r, float width, RGBColor c) {
     sf::RectangleShape shape({r.width, r.height});
-    shape.setPosition({r.topLeft.x, r.topLeft.y});
+    Point2D transformedTopLeft = Transform(r.topLeft);
+    shape.setPosition({transformedTopLeft.x, transformedTopLeft.y});
     shape.setFillColor(sf::Color::Transparent);
     shape.setOutlineColor(sf::Color(c.r, c.g, c.b));
     shape.setOutlineThickness(width);
@@ -121,15 +127,17 @@ void DrawContext::FrameRect(Rect r, float width, RGBColor c) {
  * 
  */
 void DrawContext::DrawLine(Point2D from, Point2D to, float width, RGBColor c) {
-    Point2D direction = to - from;
+    Point2D transformedFromPos = Transform(from);
+    Point2D transformedFromTo = Transform(to);
+    Point2D direction = transformedFromTo - transformedFromPos;
     direction.Normalize(); 
     Point2D perpendicular(-direction.y, direction.x); 
     Point2D offset = perpendicular * (width / 2.0f);
 
-    Point2D p0 = from + offset;
-    Point2D p1 = to + offset; 
-    Point2D p2 = to - offset; 
-    Point2D p3 = from - offset; 
+    Point2D p0 = transformedFromPos + offset;
+    Point2D p1 = transformedFromTo + offset; 
+    Point2D p2 = transformedFromTo - offset; 
+    Point2D p3 = transformedFromPos - offset; 
 
     sf::ConvexShape shape;
     shape.setPointCount(4);
@@ -152,5 +160,69 @@ int DrawContext::GetWindowWidth() { return mWindow->getSize().x; }
  * @brief Returns the window's current height, in pixels
  */
 int DrawContext::GetWindowHeight() { return mWindow->getSize().y; }
+
+
+/**
+ * @brief Sets the screen position that an object's local origin (0, 0) maps to
+ *
+ * Called by the engine before an object renders, with that object's GetLocation().
+ *
+ * @param p Screen position of the object's location, in pixels
+ */
+void DrawContext::SetContextOffset(Point2D p) {
+    mOffset = p;
+}
+
+/**
+ * @brief Sets the rotation applied to everything drawn for the current object
+ *
+ * Called by the engine before an object renders, with that object's GetRotation().
+ *
+ * @param rotation Angle in radians, applied about the object's local origin
+ */
+void DrawContext::SetContextRotation(float rotation) {
+    mRotation = rotation;
+}
+
+/**
+ * @brief Converts a point from the object's local space to screen space
+ *
+ * Rotates the point about the local origin by mRotation, then shifts it by mOffset.
+ * Every Draw call runs its points through this, which is why objects draw around (0, 0).
+ *
+ * @param p Point in the object's local coordinates
+ * @return The same point in screen coordinates, in pixels
+ */
+Point2D DrawContext::Transform(Point2D p) {
+    float cosine = std::cos(mRotation);
+    float sine = std::sin(mRotation);
+
+    float newX = p.x * cosine - p.y * sine; 
+    float newY = p.x * sine + p.y * cosine;
+
+    Point2D rotated(newX, newY);
+    return rotated + mOffset;
+}
+
+/**
+ * @brief Converts a point from screen space back to the object's local space
+ *
+ * Undoes Transform: subtracts mOffset first, then rotates by -mRotation. The order matters
+ * because Transform rotated first and shifted second.
+ *
+ * @param p Point in screen coordinates, in pixels
+ * @return The same point in the object's local coordinates
+ */
+Point2D DrawContext::ReverseTransform(Point2D p) {
+    Point2D shifted(p - mOffset);
+    float cosine = std::cos(-mRotation);
+    float sine = std::sin(-mRotation);
+
+    float newX = shifted.x * cosine - shifted.y * sine; 
+    float newY = shifted.x * sine + shifted.y * cosine;
+
+    return Point2D (newX, newY);
+
+}
 
 }  // namespace CMPUT350

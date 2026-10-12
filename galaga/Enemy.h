@@ -24,10 +24,14 @@ public:
     void CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& obj) override;
     const CMPUT350::Rect& GetBounds() override;
 
+    CMPUT350::Point2D GetLocation() const override;
+    float GetRotation() const override; 
+
 private:
     CMPUT350::Point2D mEnemyLocation;  // Center of the enemy, in screen pixels
-    bool mEnemyAlive;                  // False once Kill has been called; the engine then removes the enemy
-    CMPUT350::Rect mEnemyBounds;       // Fixed box centered on mEnemyLocation, used for drawing and collisions
+    bool mEnemyAlive;  // False once Kill has been called; the engine then removes the enemy
+    CMPUT350::Rect
+        mEnemyBounds;  // Fixed box centered on mEnemyLocation, used for drawing and collisions
 };
 
 #endif

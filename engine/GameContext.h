@@ -10,7 +10,8 @@ namespace CMPUT350 {
 class GameContext {
 public:
     EngineView *mEngineView;
-    DrawContext *ScreenContext;
+    DrawContext *ScreenContext;  // Transformed per object: draw in the object's local coordinates
+    DrawContext *GUIContext;     // Never transformed: draw in screen coordinates (score, text, UI)
 };
 
 }  // namespace CMPUT350

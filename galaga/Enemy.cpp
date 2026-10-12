@@ -29,13 +29,28 @@ void Enemy::RenderBackground(CMPUT350::GameContext* context) {}
  * @brief Draws the enemy as a filled yellow rectangle
  *
  * The drawn rectangle is the same box used for collisions, so what the player sees is what can be
- * hit.
+ * hit. It is centered on (0, 0); the engine's draw context shifts it to GetLocation().
  *
  * @param context Provides the draw context used to draw the rectangle
  */
 void Enemy::RenderForeground(CMPUT350::GameContext* context) {
-    context->ScreenContext->DrawRect(mEnemyBounds, CMPUT350::Colors::yellow);
+    context->ScreenContext->DrawRect(CMPUT350::Rect(CMPUT350::Point2D(0, 0), 8.0f), CMPUT350::Colors::yellow);
 }
+
+/**
+ * @brief Returns the enemy's screen position, which the engine uses as its local origin
+ */
+CMPUT350::Point2D Enemy::GetLocation() const {
+    return mEnemyLocation;
+}
+
+/**
+ * @brief Returns the enemy's rotation in radians; enemies never rotate
+ */
+float Enemy::GetRotation() const {
+    return 0;
+}
+
 
 /**
  * @brief Called by the engine when this enemy's box overlaps another collision object

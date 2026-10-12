@@ -86,6 +86,9 @@ void GameEngine::Run() {
         DrawContext screenContext(mWindow, mFont);
         context.ScreenContext = &screenContext;
 
+        DrawContext guiContext(mWindow, mFont);
+        context.GUIContext = &guiContext;
+
         // 0. Remove any objects that are now dead
         // mGameObjects = vector containing all game elements active rn
         auto it = mGameObjects.begin(); // .begin gives iterator pointing to first object
@@ -178,6 +181,9 @@ void GameEngine::Run() {
             auto graphicsObject = std::dynamic_pointer_cast<GraphicsObject>(gameObject); // checks if gameobj also graphicsobj
 
             if (graphicsObject != nullptr) { // if so, call render func
+                // Move/rotate the draw context to this object, so it draws in its local coordinates
+                context.ScreenContext->SetContextOffset(graphicsObject->GetLocation());
+                context.ScreenContext->SetContextRotation(graphicsObject->GetRotation());
                 graphicsObject->RenderBackground(&context);
             }
         }
@@ -190,6 +196,9 @@ void GameEngine::Run() {
 
             if (graphicsObject != nullptr)
             {
+                // Same per-object transform as the background pass above
+                context.ScreenContext->SetContextOffset(graphicsObject->GetLocation());
+                context.ScreenContext->SetContextRotation(graphicsObject->GetRotation());
                 graphicsObject->RenderForeground(&context);
             }
         }
