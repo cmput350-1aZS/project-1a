@@ -68,6 +68,8 @@ private:
 
     // Game objects waiting to be activated at the beginning of the next frame.
     std::vector<std::shared_ptr<GameObject>> mAddedGameObjects;
+
+    
 };
 
 }  // namespace CMPUT350

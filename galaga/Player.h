@@ -105,6 +105,9 @@ public:
      */
     const CMPUT350::Rect& GetBounds() override;
 
+    const std::vector<CMPUT350::Shape>& GetShapes() override;
+
+
 private:
     // The player's current position.
     CMPUT350::Point2D mLoc;
@@ -115,6 +118,7 @@ private:
     // Stores weak references to the player's bullets without owning them.
     std::vector<std::weak_ptr<Bullet>> mBullets; // player's bullet vector to observe but not own bullets
 
+    std::vector<CMPUT350::Shape> mPlayerShapes;
 };
 
 #endif

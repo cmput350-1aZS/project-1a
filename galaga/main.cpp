@@ -24,6 +24,8 @@ public:
         mLoc.y = yRand(gen);
         mSpeed.x = speed(gen);  // Random speed between 1 and 5
         mSpeed.y = speed(gen);  // Random speed between 1 and 5
+
+        mBallShapes.push_back(CMPUT350::Circle(CMPUT350::Point2D(0, 0), mRadius));
     }
 
     void Update(CMPUT350::GameContext* context) override {
@@ -78,6 +80,8 @@ public:
         return bounds;
     }
 
+    const std::vector<CMPUT350::Shape>& GetShapes() { return mBallShapes; }
+
     bool IsAlive() const override { return mNumCollisions < 10; }
 
     // The ball's centre on screen; the engine draws it relative to this point
@@ -100,7 +104,9 @@ private:
     static std::mt19937 gen;
 
     int mRadius, mNumCollisions, mFrameCollisions;
-    CMPUT350::Point2D mLoc, mSpeed, mSpeedNext, mCollisionPoint;
+    CMPUT350::Point2D mLoc, mSpeed, mSpeedNext, mCollisionPoint;\
+
+    std::vector<CMPUT350::Shape> mBallShapes;
 };
 
 // Shared randoms across all balls

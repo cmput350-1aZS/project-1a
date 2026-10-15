@@ -13,6 +13,8 @@ Enemy::Enemy(CMPUT350::Point2D loc) {
     mEnemyLocation = loc;
     mEnemyAlive = true;
     mEnemyBounds = CMPUT350::Rect(loc, 8.0f);
+
+    mEnemyShapes.push_back(CMPUT350::Rect(CMPUT350::Point2D(0, 0), 8.0f));
 }
 
 void Enemy::Initialize(CMPUT350::GameContext* context) {}
@@ -93,3 +95,5 @@ bool Enemy::IsAlive() const {
  * @return The 30x30 box centered on the enemy's location
  */
 const CMPUT350::Rect& Enemy::GetBounds() { return mEnemyBounds; }
+
+const std::vector<CMPUT350::Shape>& Enemy::GetShapes() { return mEnemyShapes; }

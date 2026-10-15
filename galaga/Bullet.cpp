@@ -17,6 +17,8 @@ Bullet::Bullet(CMPUT350::Point2D location, CMPUT350::Point2D heading, bool playe
     // The bullet has not moved yet, so its previous and current positions are the same
     // and the collision box starts out with zero size
     mBounds = CMPUT350::Rect(location, location);
+
+    mShapes.push_back(CMPUT350::Line(CMPUT350::Point2D(0, 0) - mHeading, CMPUT350::Point2D(0, 0)));
 }
 
 /**
@@ -86,10 +88,16 @@ void Bullet::RenderBackground(CMPUT350::GameContext* context) {
  *
  * The other end of the line is one step behind, giving the bullet a small tail. The line is drawn
  * from (0, 0), the bullet's local origin; the engine's draw context shifts it to GetLocation().
+ * Once the bullet has hit something it draws a circle at the hit point instead of the line.
  *
- * @param context Provides the draw context used to draw the line
+ * @param context Provides the draw context used to draw the line or circle
  */
 void Bullet::RenderForeground(CMPUT350::GameContext* context) {
+    if (mHasHit) {
+        context->ScreenContext->DrawCircle(mHitPoint, 15, CMPUT350::Colors::blue);
+        return;
+    }
+
     // AI-assisted: this DrawLine call was provided by Claude when asked how to draw the bullet as a
     // line
     context->ScreenContext->DrawLine(CMPUT350::Point2D(0, 0), CMPUT350::Point2D(0, 0) - mHeading, 2,
@@ -124,6 +132,29 @@ void Bullet::CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& ob
 }
 
 /**
+ * @brief Called by the engine when this bullet's line hits another collision object
+ *
+ * Forwards to the one-argument version, which kills the bullet if the object is an Enemy.
+ * If that killed the bullet, the hit point is kept so RenderForeground can draw a circle there.
+ * When one frame brings several hit points, the one with the largest y (lowest on screen) is kept.
+ *
+ * @param obj The object this bullet hit
+ * @param collisionPoint Where the bullet's line first met obj, in the bullet's local coordinates
+ */
+void Bullet::CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& obj,
+                            const CMPUT350::Point2D& collisionPoint) {
+    CollisionEnter(obj);
+    if (!IsAlive()) {
+        // Keep the point if none is stored yet, or if this one is lower on screen
+        if (!mHasHit || collisionPoint.y > mHitPoint.y) {
+            mHitPoint = collisionPoint;
+        }
+
+        mHasHit = true;
+    }
+}
+
+/**
  * @brief Marks the bullet as dead so the engine removes it at the start of the next frame
  */
 void Bullet::Kill() { mBulletAlive = false; }
@@ -147,3 +178,9 @@ bool Bullet::IsAlive() const {
  */
 const CMPUT350::Rect& Bullet::GetBounds() { return mBounds; }
 
+/**
+ * @brief Gives the engine the shapes used for collision checks
+ *
+ * @return One line from the bullet's tail to its head, in the bullet's local coordinates
+ */
+const std::vector<CMPUT350::Shape>& Bullet::GetShapes() { return mShapes; }

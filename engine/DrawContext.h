@@ -53,6 +53,9 @@ private:
     Point2D Transform(Point2D p);            // Local object space -> screen space
 	Point2D ReverseTransform(Point2D p);     // Screen space -> local object space
 
+    Rect Transform(Rect r); // Rotates rectangle and computes new bounding box after rotation
+
+
 };
 
 }  // namespace CMPUT350

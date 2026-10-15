@@ -9,7 +9,7 @@
  */
 Player::Player(CMPUT350::Point2D loc): mLoc(loc), mAlive(true)
 {
-    // TODO: Update code
+    mPlayerShapes.push_back(CMPUT350::Rect(-20, -20, 40, 40));
 }
 
 /**
@@ -185,3 +185,5 @@ const CMPUT350::Rect& Player::GetBounds()
 
     return sBounds;
 }
+
+const std::vector<CMPUT350::Shape>& Player::GetShapes() { return mPlayerShapes; }
