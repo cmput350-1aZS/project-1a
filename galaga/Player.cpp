@@ -1,14 +1,16 @@
-#include <cassert>
 #include "Player.h"
-#include "Bullet.h"
 
+#include <cassert>
+
+#include "Bullet.h"
+#include "NotificationManager.h"
+#include "Enemy.h"
 /**
  * @brief Constructs a player at the given location.
  *
  * @param loc The initial position of the player.
  */
-Player::Player(CMPUT350::Point2D loc): mLoc(loc), mAlive(true)
-{
+Player::Player(CMPUT350::Point2D loc) : mLoc(loc), mAlive(true) {
     mPlayerShapes.push_back(CMPUT350::Rect(-20, -20, 40, 40));
 }
 
@@ -17,9 +19,7 @@ Player::Player(CMPUT350::Point2D loc): mLoc(loc), mAlive(true)
  *
  * @param context The game context containing access to the engine and screen.
  */
-void Player::Initialize(CMPUT350::GameContext* context)
-{
-}
+void Player::Initialize(CMPUT350::GameContext* context) {}
 
 /**
  * @brief Updates the player's state for the current frame.
@@ -29,21 +29,17 @@ void Player::Initialize(CMPUT350::GameContext* context)
  *
  * @param context The game context containing access to the engine and screen.
  */
-void Player::Update(CMPUT350::GameContext* context)
-{
-    // removes dead bullets 
+void Player::Update(CMPUT350::GameContext* context) {
+    // removes dead bullets
 
-    auto it = mBullets.begin(); // iterator that points to first element in vector
+    auto it = mBullets.begin();  // iterator that points to first element in vector
 
-    while (it != mBullets.end())
-    {
-        if (it->expired()) // it->expired becomes true if bullet is destroyed
+    while (it != mBullets.end()) {
+        if (it->expired())  // it->expired becomes true if bullet is destroyed
         {
-            it = mBullets.erase(it); // removes expired bullet from players vector
-        }
-        else
-        {
-            ++it; // if not expired, moves to next bullet
+            it = mBullets.erase(it);  // removes expired bullet from players vector
+        } else {
+            ++it;  // if not expired, moves to next bullet
         }
     }
 }
@@ -51,10 +47,15 @@ void Player::Update(CMPUT350::GameContext* context)
 /**
  * @brief Performs updates after the main update and collision stages.
  *
+ * Sends "PlayerDied" to Galaga once the player has been killed. The engine removes the dead
+ * player at the start of the next frame, so the message is sent exactly once.
+ *
  * @param context The game context containing access to the engine and screen.
  */
-void Player::LateUpdate(CMPUT350::GameContext* context)
-{
+void Player::LateUpdate(CMPUT350::GameContext* context) {
+    if (!mAlive) {
+        context->mNotificationManager->Notify("PlayerDied");
+    }
 }
 
 /**
@@ -74,10 +75,10 @@ void Player::LateUpdate(CMPUT350::GameContext* context)
 //         if (mBullets.size() < 2){ // only if there are less than 2 bullets on screen
 //             // Create a bullet and give ownership to the engine with
 //             // Bullet(loc, movement, player bullet true (not enemy bullet)).
-//             auto bullet = std::make_shared<Bullet>(CMPUT350::Point2D(mLoc.x, mLoc.y -20), CMPUT350::Point2D(0,-10), true);
-//             context->mEngineView->AddGameObject(bullet); // allows game engine to handle bullet
-//             mBullets.push_back(bullet); // creates weak ptr that observes this bulletby player's mBullet vector (made of weak ptrs)
-//             return true;
+//             auto bullet = std::make_shared<Bullet>(CMPUT350::Point2D(mLoc.x, mLoc.y -20),
+//             CMPUT350::Point2D(0,-10), true); context->mEngineView->AddGameObject(bullet); //
+//             allows game engine to handle bullet mBullets.push_back(bullet); // creates weak ptr
+//             that observes this bulletby player's mBullet vector (made of weak ptrs) return true;
 //         }
 //     }
 
@@ -90,7 +91,7 @@ void Player::LateUpdate(CMPUT350::GameContext* context)
 //         mLoc.x +=10;
 //         return true;
 //     }
-    
+
 //     return false;
 // }
 
@@ -99,24 +100,17 @@ void Player::LateUpdate(CMPUT350::GameContext* context)
  *
  * @param context The game context containing access to the screen.
  */
-void Player::RenderBackground(CMPUT350::GameContext* context)
-{
-}
+void Player::RenderBackground(CMPUT350::GameContext* context) {}
 
 /**
  * @brief Returns the player's screen position, which the engine uses as the ship's local origin
  */
-CMPUT350::Point2D Player::GetLocation() const {
-    return mLoc;
-}
+CMPUT350::Point2D Player::GetLocation() const { return mLoc; }
 
 /**
  * @brief Returns the ship's rotation in radians; the player ship never rotates
  */
-float Player::GetRotation() const {
-    return 0;
-}
-
+float Player::GetRotation() const { return 0; }
 
 /**
  * @brief Renders the player's ship in the foreground.
@@ -126,24 +120,31 @@ float Player::GetRotation() const {
  *
  * @param context The game context containing access to the screen.
  */
-void Player::RenderForeground(CMPUT350::GameContext* context)
-{
+void Player::RenderForeground(CMPUT350::GameContext* context) {
     // triangle to form ship
-    context->ScreenContext->DrawLine(CMPUT350::Point2D(0, -20), CMPUT350::Point2D(-20, 20), 4, CMPUT350::Colors::white); // top pt
-    context->ScreenContext->DrawLine(CMPUT350::Point2D(-20, 20), CMPUT350::Point2D(0, 10), 4, CMPUT350::Colors::white); // bottom left
-    context->ScreenContext->DrawLine(CMPUT350::Point2D(0, 10), CMPUT350::Point2D(20, 20), 4, CMPUT350::Colors::white); // bottom centre
-    context->ScreenContext->DrawLine(CMPUT350::Point2D(20, 20), CMPUT350::Point2D(0, -20), 4, CMPUT350::Colors::white); // bottom right
+    context->ScreenContext->DrawLine(CMPUT350::Point2D(0, -20), CMPUT350::Point2D(-20, 20), 4,
+                                     CMPUT350::Colors::white);  // top pt
+    context->ScreenContext->DrawLine(CMPUT350::Point2D(-20, 20), CMPUT350::Point2D(0, 10), 4,
+                                     CMPUT350::Colors::white);  // bottom left
+    context->ScreenContext->DrawLine(CMPUT350::Point2D(0, 10), CMPUT350::Point2D(20, 20), 4,
+                                     CMPUT350::Colors::white);  // bottom centre
+    context->ScreenContext->DrawLine(CMPUT350::Point2D(20, 20), CMPUT350::Point2D(0, -20), 4,
+                                     CMPUT350::Colors::white);  // bottom right
 }
 
 /**
  * @brief Handles a collision with another collision object.
  *
- * The player currently does not perform any action when a collision occurs.
+ * The player is killed when it touches an Enemy and ignores everything else.
  *
  * @param obj The collision object that collided with the player.
  */
-void Player::CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& obj)
-{
+void Player::CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& obj) {
+    std::shared_ptr<Enemy> enemy = std::dynamic_pointer_cast<Enemy>(obj);
+    if (enemy != nullptr) {
+        Kill();
+    }
+
 }
 
 /**
@@ -151,18 +152,14 @@ void Player::CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& ob
  *
  * The game engine will remove the player when it is no longer alive.
  */
-void Player::Kill()
-{
-    mAlive = false;
-}
+void Player::Kill() { mAlive = false; }
 
 /**
  * @brief Checks whether the player is still alive.
  *
  * @return true if the player is alive, otherwise false.
  */
-bool Player::IsAlive() const
-{
+bool Player::IsAlive() const {
     // TODO: Update code
     return mAlive;
 }
@@ -175,13 +172,12 @@ bool Player::IsAlive() const
  *
  * @return A reference to the player's collision bounding rectangle.
  */
-const CMPUT350::Rect& Player::GetBounds()
-{
+const CMPUT350::Rect& Player::GetBounds() {
     // TODO: Update code
     static CMPUT350::Rect sBounds(0, 0, 0, 0);
 
     // this is player's collision bounds
-    sBounds = CMPUT350::Rect(mLoc.x-20, mLoc.y-20, 40, 40);
+    sBounds = CMPUT350::Rect(mLoc.x - 20, mLoc.y - 20, 40, 40);
 
     return sBounds;
 }

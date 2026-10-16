@@ -3,10 +3,11 @@
 
 #include "CollisionObject.h"
 #include "GameContext.h"
+#include "Bezier.h"
 
 class Enemy : public CMPUT350::CollisionObject {
 public:
-    Enemy(CMPUT350::Point2D loc);
+    Enemy(CMPUT350::Point2D loc, const std::vector<CMPUT350::Point2D>& path);
 
     // GameObject Functions
     void Initialize(CMPUT350::GameContext* context) override;
@@ -36,6 +37,11 @@ private:
         mEnemyBounds;  // Fixed box centered on mEnemyLocation, used for drawing and collisions
     
     std::vector<CMPUT350::Shape> mEnemyShapes;
+
+    std::vector<CMPUT350::Point2D> mPath;
+    float mT;
+    CMPUT350::Point2D mFormationLoc;
+    bool mInFormation;
 };
 
 #endif

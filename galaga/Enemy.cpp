@@ -1,6 +1,7 @@
 #include "Enemy.h"
 
 #include "Bullet.h"
+#include "NotificationManager.h"
 
 /**
  * @brief Constructs a stationary enemy centered on a point
@@ -9,21 +10,49 @@
  *
  * @param loc Center of the enemy, in screen pixels
  */
-Enemy::Enemy(CMPUT350::Point2D loc) {
+Enemy::Enemy(CMPUT350::Point2D loc, const std::vector<CMPUT350::Point2D>& path) {
     mEnemyLocation = loc;
     mEnemyAlive = true;
     mEnemyBounds = CMPUT350::Rect(loc, 8.0f);
-
     mEnemyShapes.push_back(CMPUT350::Rect(CMPUT350::Point2D(0, 0), 8.0f));
+    mPath = path;
+    mT = 0;
+    mFormationLoc = loc;
+    mInFormation = false;
+    mEnemyLocation = path[0];  // (the enemy starts at the first control point
 }
 
 void Enemy::Initialize(CMPUT350::GameContext* context) {}
 
-void Enemy::Update(CMPUT350::GameContext* context) {}
+void Enemy::Update(CMPUT350::GameContext* context) {
+    if (!mInFormation) {
+        mT += 0.01f;
+        mEnemyLocation = CMPUT350::Bezier::GetPoint(mPath, mT);
+        mEnemyBounds = CMPUT350::Rect(mEnemyLocation, 8.0f);
 
-void Enemy::LateUpdate(CMPUT350::GameContext* context) {}
+        if (mT >= 1.0f) {
+            mInFormation = true;
+            mEnemyLocation = mFormationLoc;
+            mEnemyBounds = CMPUT350::Rect(mEnemyLocation, 8.0f);
+        }
+    }
+}
 
-//bool Enemy::HandleKeyEvent(CMPUT350::GameContext* context, char key) { return false; }
+/**
+ * @brief Tells Galaga when this enemy has died
+ *
+ * LateUpdate runs after collisions, and the engine removes dead objects at the start of the
+ * next frame, so the "EnemyDied" message is sent exactly once per enemy.
+ *
+ * @param context Provides the notification manager
+ */
+void Enemy::LateUpdate(CMPUT350::GameContext* context) {
+    if (!mEnemyAlive) {
+        context->mNotificationManager->Notify("EnemyDied");
+    }
+}
+
+// bool Enemy::HandleKeyEvent(CMPUT350::GameContext* context, char key) { return false; }
 
 void Enemy::RenderBackground(CMPUT350::GameContext* context) {}
 
@@ -36,23 +65,19 @@ void Enemy::RenderBackground(CMPUT350::GameContext* context) {}
  * @param context Provides the draw context used to draw the rectangle
  */
 void Enemy::RenderForeground(CMPUT350::GameContext* context) {
-    context->ScreenContext->DrawRect(CMPUT350::Rect(CMPUT350::Point2D(0, 0), 8.0f), CMPUT350::Colors::yellow);
+    context->ScreenContext->DrawRect(CMPUT350::Rect(CMPUT350::Point2D(0, 0), 8.0f),
+                                     CMPUT350::Colors::yellow);
 }
 
 /**
  * @brief Returns the enemy's screen position, which the engine uses as its local origin
  */
-CMPUT350::Point2D Enemy::GetLocation() const {
-    return mEnemyLocation;
-}
+CMPUT350::Point2D Enemy::GetLocation() const { return mEnemyLocation; }
 
 /**
  * @brief Returns the enemy's rotation in radians; enemies never rotate
  */
-float Enemy::GetRotation() const {
-    return 0;
-}
-
+float Enemy::GetRotation() const { return 0; }
 
 /**
  * @brief Called by the engine when this enemy's box overlaps another collision object

@@ -1,6 +1,7 @@
 #include <random>
 
 #include "Enemy.h"
+#include "Galaga.h"
 #include "GameEngine.h"
 #include "Player.h"
 #include "Stars.h"
@@ -94,8 +95,10 @@ public:
         // Everything is drawn around (0, 0); the engine's draw context shifts it to mLoc
         context->ScreenContext->DrawCircle(CMPUT350::Point2D(0, 0), mRadius, CMPUT350::Colors::red);
         context->ScreenContext->DrawCenteredText("Circle" + std::to_string(mNumCollisions),
-                                                 mRadius / 6.0f, CMPUT350::Point2D(0, 0), CMPUT350::Colors::white);
-        context->ScreenContext->DrawLine(CMPUT350::Point2D(0, 0), CMPUT350::Point2D(0, 0) + mCollisionPoint, mRadius * 0.1f,
+                                                 mRadius / 6.0f, CMPUT350::Point2D(0, 0),
+                                                 CMPUT350::Colors::white);
+        context->ScreenContext->DrawLine(CMPUT350::Point2D(0, 0),
+                                         CMPUT350::Point2D(0, 0) + mCollisionPoint, mRadius * 0.1f,
                                          CMPUT350::Colors::blue);
     }
 
@@ -104,7 +107,7 @@ private:
     static std::mt19937 gen;
 
     int mRadius, mNumCollisions, mFrameCollisions;
-    CMPUT350::Point2D mLoc, mSpeed, mSpeedNext, mCollisionPoint;\
+    CMPUT350::Point2D mLoc, mSpeed, mSpeedNext, mCollisionPoint;
 
     std::vector<CMPUT350::Shape> mBallShapes;
 };
@@ -125,21 +128,8 @@ int main() {
         engine.Run();
     } else {
         CMPUT350::GameEngine engine(768, 1024, "Galaga");
-        auto player = std::make_shared<Player>(
-            CMPUT350::Point2D(768 / 2, 900));  // on mac changed to 800 from 900 because local
-                                               // machine would display in 768 x 865
-        engine.AddGameObject(player);
+        engine.AddGameObject(std::make_shared<Galaga>());
         engine.AddGameObject(std::make_shared<Stars>(250, CMPUT350::Rect(0, 0, 768, 1024)));
-        for (int x = 0; x < 40; x++)  // changed to 40 enemies from 4
-        {
-            // auto enemy = std::make_shared<Enemy>(CMPUT350::Point2D(100 + x * 200, 100)); is
-            // placing 4 enemies
-            auto enemy = std::make_shared<Enemy>(CMPUT350::Point2D(
-                20 + x * (728.0f / 39.0f),
-                100));  // 20 pixels on each side of screen and remaining 748-20 = 728 left to
-                        // distribute 40 enemies (39 gaps between them)
-            engine.AddGameObject(enemy);
-        }
         engine.Run();
     }
     return 0;
