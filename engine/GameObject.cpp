@@ -1,4 +1,5 @@
 #include "GameObject.h"
+#include <string>
 
 namespace CMPUT350 {
 
@@ -60,20 +61,6 @@ void GameObject::RenderUI(GameContext *contextrender) {
 }
 
 /**
- * @brief Handles a keyboard input event.
- *
- * This default implementation does not respond to keyboard input.
- *
- * @param context The game context containing access to the engine and screen.
- * @param key The keyboard character received from the event.
- *
- * @return false because the default implementation does not handle the key.
- */
-bool GameObject::HandleKeyEvent(GameContext *context, char key) {
-    return false;
-}
-
-/**
  * @brief Checks whether the game object is still active.
  *
  * @return true if the object is alive, or false if Kill() has been called.
@@ -93,5 +80,21 @@ bool GameObject::IsAlive() const {
 void GameObject::Kill() {
     alive = false;
 }
+
+
+/**
+ * @brief Handles a notification received from the notification manager.
+ *
+ * This default implementation does nothing. Derived game objects can
+ * override this function to respond to specific notifications.
+ *
+ * @param key The notification message received.
+ *
+ * This function does not return a value.
+ */
+void GameObject::ReceiveNotification(const std::string& key) {
+    return;
+}
+
 
 }  // namespace CMPUT350

@@ -68,31 +68,31 @@ void Player::LateUpdate(CMPUT350::GameContext* context)
  *
  * @return true if the player handled the key, otherwise false.
  */
-bool Player::HandleKeyEvent(CMPUT350::GameContext* context, char key)
-{
-    if (key == ' ') {
-        if (mBullets.size() < 2){ // only if there are less than 2 bullets on screen
-            // Create a bullet and give ownership to the engine with
-            // Bullet(loc, movement, player bullet true (not enemy bullet)).
-            auto bullet = std::make_shared<Bullet>(CMPUT350::Point2D(mLoc.x, mLoc.y -20), CMPUT350::Point2D(0,-10), true);
-            context->mEngineView->AddGameObject(bullet); // allows game engine to handle bullet
-            mBullets.push_back(bullet); // creates weak ptr that observes this bulletby player's mBullet vector (made of weak ptrs)
-            return true;
-        }
-    }
+// bool Player::HandleKeyEvent(CMPUT350::GameContext* context, char key)
+// {
+//     if (key == ' ') {
+//         if (mBullets.size() < 2){ // only if there are less than 2 bullets on screen
+//             // Create a bullet and give ownership to the engine with
+//             // Bullet(loc, movement, player bullet true (not enemy bullet)).
+//             auto bullet = std::make_shared<Bullet>(CMPUT350::Point2D(mLoc.x, mLoc.y -20), CMPUT350::Point2D(0,-10), true);
+//             context->mEngineView->AddGameObject(bullet); // allows game engine to handle bullet
+//             mBullets.push_back(bullet); // creates weak ptr that observes this bulletby player's mBullet vector (made of weak ptrs)
+//             return true;
+//         }
+//     }
 
-    if (key == 'a' || key == 'A' ){ // left
-        mLoc.x -=10;
-        return true;
-    }
+//     if (key == 'a' || key == 'A' ){ // left
+//         mLoc.x -=10;
+//         return true;
+//     }
 
-    if (key == 'd' || key == 'D' ) { // right
-        mLoc.x +=10;
-        return true;
-    }
+//     if (key == 'd' || key == 'D' ) { // right
+//         mLoc.x +=10;
+//         return true;
+//     }
     
-    return false;
-}
+//     return false;
+// }
 
 /**
  * @brief Renders the player's background graphics.

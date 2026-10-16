@@ -1,6 +1,8 @@
 #ifndef GAMEOBJECT_H
 #define GAMEOBJECT_H
 
+#include <string>
+
 namespace CMPUT350 {
 
 class GameContext;
@@ -51,16 +53,6 @@ public:
     virtual void RenderUI(GameContext *context);
 
     /**
-     * @brief Handles a keyboard input event.
-     *
-     * @param context The game context containing access to the engine and screen.
-     * @param key The keyboard character received from the event.
-     *
-     * @return true if the object handled the key, otherwise false.
-     */
-    virtual bool HandleKeyEvent(GameContext *context, char key);
-
-    /**
      * @brief Checks whether the game object is still active.
      *
      * @return true if the object is alive, otherwise false.
@@ -75,6 +67,15 @@ public:
      */
     virtual void Kill();
 
+    /**
+ * @brief Handles a notification received from the notification manager.
+ *
+ * Derived classes can override this function to respond to specific
+ * notifications, such as player movement or firing commands.
+ *
+ * @param key The notification message received.
+ */
+virtual void ReceiveNotification(const std::string& key);
 };
 
 }  // namespace CMPUT350

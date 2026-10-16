@@ -8,7 +8,11 @@ class GameEngine;
 #include "EngineView.h"
 #include "GameObject.h"
 #include "MathUtil.h"
+#include "NotificationManager.h"
 #include <SFML/Graphics.hpp>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace CMPUT350 {
 
@@ -46,6 +50,42 @@ public:
     void AddGameObject(std::shared_ptr<GameObject> gameObject) override;
 
     /**
+     * @brief Registers a notification to send when a key is pressed.
+     *
+     * @param key The SFML key code to listen for.
+     * @param notification The notification message to send.
+     */
+    void InstallKeyDownNotification(int key, const std::string& notification) override;
+
+    /**
+     * @brief Registers a notification to send when a key is released.
+     *
+     * @param key The SFML key code to listen for.
+     * @param notification The notification message to send.
+     */
+    void InstallKeyUpNotification(int key, const std::string& notification) override;
+
+    /**
+     * @brief Returns an iterator to the first active game object.
+     */
+    const_iterator begin() const override;
+
+    /**
+     * @brief Returns an iterator past the last active game object.
+     */
+    const_iterator end() const override;
+
+    /**
+     * @brief Returns a const iterator to the first active game object.
+     */
+    const_iterator cbegin() const override;
+
+    /**
+     * @brief Returns a const iterator past the last active game object.
+     */
+    const_iterator cend() const override;
+
+    /**
      * @brief Runs the main game loop.
      *
      * Each frame removes dead objects, activates newly added objects,
@@ -68,6 +108,15 @@ private:
 
     // Game objects waiting to be activated at the beginning of the next frame.
     std::vector<std::shared_ptr<GameObject>> mAddedGameObjects;
+
+    // Notifications registered for key-press events.
+    std::unordered_map<int, std::vector<std::string>> mKeyDownNotifications;
+
+    // Notifications registered for key-release events.
+    std::unordered_map<int, std::vector<std::string>> mKeyUpNotifications;
+
+    // Manages notifications sent between game objects.
+    NotificationManager mNotificationManager;
 
     
 };
