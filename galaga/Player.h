@@ -54,7 +54,7 @@ public:
      *
      * @return true if the player handled the key, otherwise false.
      */
-    bool HandleKeyEvent(CMPUT350::GameContext* context, char key) override;
+    //bool HandleKeyEvent(CMPUT350::GameContext* context, char key) override;
 
     /**
      * @brief Checks whether the player is still alive.

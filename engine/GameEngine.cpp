@@ -3,6 +3,7 @@
 #include "DrawContext.h"
 #include "CollisionObject.h"
 #include "GraphicsObject.h"
+#include "NotificationManager.h"
 
 /// @brief
 namespace CMPUT350 {
@@ -57,6 +58,56 @@ void GameEngine::AddGameObject(std::shared_ptr<GameObject> gameObject) {
 }
 
 /**
+ * @brief Registers a notification for a key-press event.
+ *
+ * @param key The keyboard scancode.
+ * @param notification The notification message to send.
+ */
+void GameEngine::InstallKeyDownNotification(
+    int key, const std::string& notification) {
+    mKeyDownNotifications[key].push_back(notification);
+}
+
+/**
+ * @brief Registers a notification for a key-release event.
+ *
+ * @param key The keyboard scancode.
+ * @param notification The notification message to send.
+ */
+void GameEngine::InstallKeyUpNotification(
+    int key, const std::string& notification) {
+    mKeyUpNotifications[key].push_back(notification);
+}
+
+/**
+ * @brief Returns an iterator to the first active game object.
+ */
+EngineView::const_iterator GameEngine::begin() const {
+    return mGameObjects.begin();
+}
+
+/**
+ * @brief Returns an iterator past the last active game object.
+ */
+EngineView::const_iterator GameEngine::end() const {
+    return mGameObjects.end();
+}
+
+/**
+ * @brief Returns a const iterator to the first active game object.
+ */
+EngineView::const_iterator GameEngine::cbegin() const {
+    return mGameObjects.cbegin();
+}
+
+/**
+ * @brief Returns a const iterator past the last active game object.
+ */
+EngineView::const_iterator GameEngine::cend() const {
+    return mGameObjects.cend();
+}
+
+/**
  * @method Run
  * @arguments None
  * @description Gives control to the game engine. Will not return until the game window is closed or
@@ -83,6 +134,8 @@ void GameEngine::Run() {
         // engine and drawing system without directly owning either one.
         GameContext context;
         context.mEngineView = this; // pointer to current GameEngine obj
+        context.mNotificationManager = &mNotificationManager;
+        context.currentFrame = 0;
         DrawContext screenContext(mWindow, mFont);
         context.ScreenContext = &screenContext;
 
@@ -114,11 +167,24 @@ void GameEngine::Run() {
             if (event->is<sf::Event::Closed>()) { // checks if event was closing the window
                 mWindow->close();
             }
-            else if (const auto* keyPressed = event->getIf<sf::Event::TextEntered>()) { // checks if event done was a keyboard input (textentered)
-                // Every active object receives the keyboard event so objects can
-                // decide whether they need to respond to the key.
-                for (auto gameObject : mGameObjects) { // every object gets to react to event done by player
-                    gameObject->HandleKeyEvent(&context, static_cast<char>(keyPressed->unicode));
+            else if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
+                int key = static_cast<int>(keyPressed->scancode);
+
+                auto it = mKeyDownNotifications.find(key);
+                if (it != mKeyDownNotifications.end()) {
+                    for (const std::string& notification : it->second) {
+                        mNotificationManager.Notify(notification);
+                    }
+                }
+            }
+            else if (const auto* keyReleased = event->getIf<sf::Event::KeyReleased>()) {
+                int key = static_cast<int>(keyReleased->scancode);
+
+                auto it = mKeyUpNotifications.find(key);
+                if (it != mKeyUpNotifications.end()) {
+                    for (const std::string& notification : it->second) {
+                        mNotificationManager.Notify(notification);
+                    }
                 }
             }
         }
