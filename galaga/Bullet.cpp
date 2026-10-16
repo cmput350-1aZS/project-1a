@@ -70,7 +70,7 @@ void Bullet::LateUpdate(CMPUT350::GameContext* context) {
  * @param key Unused
  * @return Always false, meaning the bullet did not use the key
  */
-bool Bullet::HandleKeyEvent(CMPUT350::GameContext* context, char key) { return false; }
+//bool Bullet::HandleKeyEvent(CMPUT350::GameContext* context, char key) { return false; }
 
 /**
  * @brief Draws the background layer; a bullet has no background graphics
