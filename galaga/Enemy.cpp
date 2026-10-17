@@ -201,10 +201,7 @@ void Enemy::SetPath(
 }
 
 /**
- * @brief Advances the enemy along its current path.
- *
- * Uses the cumulative distance samples to approximate constant-speed
- * movement along the Bezier curve.
+ * @brief Advances the enemy along its current path at approximately constant speed.
  */
 void Enemy::AdvancePath() {
     if (!mPathActive || mPathSamples.empty()) {
@@ -213,12 +210,13 @@ void Enemy::AdvancePath() {
 
     mPathDistance += mMovementSpeed;
 
-    // Finish the path and return the enemy to formation.
+    // finish the path and return to its assigned formation pos
     if (mPathDistance >= mPathLength) {
         mLocation = mPathSamples.back();
         mPathActive = false;
         mHasEnteredFormation = true;
         mInFormation = true;
+        mRotation = 0.0f;
         return;
     }
 
@@ -233,10 +231,7 @@ void Enemy::AdvancePath() {
         return;
     }
 
-    const std::size_t upperIndex =
-        static_cast<std::size_t>(
-            std::distance(mPathDistances.begin(), upper)
-        );
+    const std::size_t upperIndex = static_cast<std::size_t>(std::distance(mPathDistances.begin(), upper));
 
     const std::size_t lowerIndex = upperIndex - 1;
 
@@ -249,10 +244,17 @@ void Enemy::AdvancePath() {
         return;
     }
 
-    const float fraction =
-        (mPathDistance - lowerDistance) / interval;
+    const float fraction = (mPathDistance - lowerDistance) / interval;
+
+    const CMPUT350::Point2D previousLocation = mLocation;
 
     mLocation = mPathSamples[lowerIndex] + (mPathSamples[upperIndex] - mPathSamples[lowerIndex]) * fraction;
+
+    const CMPUT350::Point2D movement = mLocation - previousLocation;
+
+    if (movement.x != 0.0f || movement.y != 0.0f) {
+        mRotation = std::atan2(movement.y, movement.x);
+    }
 }
 
 /**
@@ -276,7 +278,11 @@ bool Enemy::AllEnemiesHaveEnteredFormation(
 }
 
 /**
- * @brief Starts an attack path that returns to formation.
+ * @brief Starts an attack path that approaches the player and returns to formation.
+ *
+ * Each enemy type uses a different horizontal direction and attack arc.
+ * The path consists of two cubic Bezier segments: one approaches the player,
+ * and the second returns the enemy to its assigned formation position.
  *
  * @param context Provides the current frame for attack cooldowns
  * @param target The player's current location
@@ -286,14 +292,40 @@ bool Enemy::BeginAttack(
     CMPUT350::GameContext* context,
     const CMPUT350::Point2D& target
 ) {
-    (void)target;
-
     if (!mAlive || !mInFormation || mPathActive) {
         return false;
     }
 
-    // path leaves formation then sweeps through an attack motion then returns to the assigned location again
-    const std::vector<CMPUT350::Point2D> attackPath = {mLocation, mLocation + CMPUT350::Point2D(-mAttackArcX, mAttackArcY), mFormationLocation + CMPUT350::Point2D(mAttackArcX, mAttackArcY), mFormationLocation};
+    const CMPUT350::Point2D start = mLocation;
+    const CMPUT350::Point2D finish = mFormationLocation;
+
+    // Each enemy type attacks from a different side.
+    float direction = -1.0f;
+
+    if (mEnemyType == "Fighter") {
+        direction = 1.0f;
+    } else if (mEnemyType == "Tank") {
+        direction = (mHoverPhase < 3.0f) ? -1.0f : 1.0f;
+    }
+
+    const float arcX = mAttackArcX;
+    const float arcY = mAttackArcY;
+
+    // 7 control pts define 2 connected cubic Bezier segments
+    // The first segment dives toward the player's current position.
+    // The second segment curves back to the enemy's formation position.
+    
+    // OPEN AI IMPLEMENTATION
+    const std::vector<CMPUT350::Point2D> attackPath = {
+        start,
+        start + CMPUT350::Point2D(direction * arcX * 0.4f, arcY * 0.25f),
+        target + CMPUT350::Point2D(-direction * arcX * 0.4f, -arcY * 0.5f),
+        target,
+        target + CMPUT350::Point2D(direction * arcX * 0.4f, -arcY * 0.5f),
+        finish + CMPUT350::Point2D(-direction * arcX * 0.4f, arcY * 0.25f),
+        finish
+    };
+    // ENDS HERE
 
     SetPath(attackPath);
 
@@ -334,21 +366,31 @@ void Enemy::FireAt(
 }
 
 /**
- * @brief Draws the enemy as a filled rectangle.
- *
- * The rectangle is centered on (0, 0); the engine's draw context
- * shifts it to GetLocation().
- *
- * @param context Provides the draw context used to draw the rectangle
- * @param halfWidth Half of the rectangle's width
- * @param halfHeight Half of the rectangle's height
+ * @brief Draws the enemy using its type and remaining health to select its color.
  */
 void Enemy::DrawEnemy(
     CMPUT350::GameContext* context,
     float halfWidth,
     float halfHeight
 ) {
-    context->ScreenContext->DrawRect(CMPUT350::Rect(CMPUT350::Point2D(-halfWidth, -halfHeight), CMPUT350::Point2D(halfWidth, halfHeight)), CMPUT350::Colors::yellow);
+    CMPUT350::RGBColor color = CMPUT350::Colors::yellow;
+
+    if (mEnemyType == "Fighter") {
+        color = CMPUT350::Colors::blue;
+    } else if (mEnemyType == "Tank") {
+        // tank changes colour after losing 1/2 health pt
+        color = (mHealth == 2)
+            ? CMPUT350::Colors::red
+            : CMPUT350::Colors::yellow;
+    }
+
+    context->ScreenContext->DrawRect(
+        CMPUT350::Rect(
+            CMPUT350::Point2D(-halfWidth, -halfHeight),
+            CMPUT350::Point2D(halfWidth, halfHeight)
+        ),
+        color
+    );
 }
 
 /**
@@ -390,7 +432,7 @@ CMPUT350::Point2D Enemy::GetLocation() const {
  * @brief Returns the enemy's rotation in radians; enemies never rotate
  */
 float Enemy::GetRotation() const {
-    return 0.0f;
+    return mRotation;
 }
 
 /**
@@ -584,7 +626,10 @@ bool FighterEnemy::Attack(
         return false;
     }
 
+    FireAt(context, target + CMPUT350::Point2D(-70.0f, 0.0f));
     FireAt(context, target);
+    FireAt(context, target + CMPUT350::Point2D(70.0f, 0.0f));
+
     return true;
 }
 
@@ -638,7 +683,10 @@ bool TankEnemy::Attack(
         return false;
     }
 
+    FireAt(context, target + CMPUT350::Point2D(-110.0f, 0.0f));
     FireAt(context, target);
+    FireAt(context, target + CMPUT350::Point2D(110.0f, 0.0f));
+
     return true;
 }
 

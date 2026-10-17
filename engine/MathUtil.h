@@ -178,6 +178,12 @@ struct Circle {
     Circle(float x, float y, float r) : center(x, y), radius(r) {}
 };
 
+// prints a circle as its center + radius
+static std::ostream& operator<<(std::ostream& os, const Circle& c) {
+    os << c.center << " radius=" << c.radius;
+    return os;
+}
+
 
 struct Rect {
     Point2D topLeft;
