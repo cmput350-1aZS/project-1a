@@ -37,7 +37,7 @@ static Point2D CalculatePoint(
 }
 
 // calculates slope on one cubic Bezier segment
-static Point2D CalculateSlope(
+static Vector2D CalculateSlope(
     const std::vector<Point2D>& pts, size_t start, float t)
 {
     const Point2D& p0 = pts[start];
@@ -51,7 +51,7 @@ static Point2D CalculateSlope(
     float b = 6.0f * u * t;
     float c = 3.0f * t * t;
 
-    return Point2D(
+    return Vector2D(
         a * (p1.x - p0.x) +
         b * (p2.x - p1.x) +
         c * (p3.x - p2.x),
@@ -76,7 +76,7 @@ Point2D Bezier::GetPoint(float t) const
 }
 
 // returns the slope of the stored curve
-Point2D Bezier::GetSlope(float t) const
+Vector2D Bezier::GetSlope(float t) const
 {
     return GetSlope(mPoints, t);
 }
@@ -113,7 +113,7 @@ Point2D Bezier::GetPoint(
 }
 
 // returns slope on curve containing one/more segments
-Point2D Bezier::GetSlope(
+Vector2D Bezier::GetSlope(
     const std::vector<Point2D>& pts, float t)
 {
     CheckPoints(pts);
