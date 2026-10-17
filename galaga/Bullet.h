@@ -1,13 +1,17 @@
 #ifndef BULLET_H
 #define BULLET_H
 
+#include <memory>
+
 #include "CollisionObject.h"
 #include "GameContext.h"
+#include "GameObject.h"
 
 class Bullet : public CMPUT350::CollisionObject
 {
 public:
-    Bullet(CMPUT350::Point2D location, CMPUT350::Point2D heading, bool player);
+    Bullet(CMPUT350::Point2D location, CMPUT350::Point2D heading, bool player,
+           std::weak_ptr<CMPUT350::GameObject> parent);
     bool IsPlayerBullet();
 
     // GameObject Functions
@@ -35,6 +39,7 @@ private:
     bool mPlayerBullet;           // True if fired by the player, false if by an enemy
     CMPUT350::Rect mBounds;       // Box covering the previous and current position, used for collisions
     bool mBulletAlive;            // False once Kill has been called; the engine then removes the bullet
+    std::weak_ptr<CMPUT350::GameObject> mParent;
 
 };
 #endif // BULLET_H

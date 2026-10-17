@@ -117,6 +117,8 @@ private:
 
     // Manages notifications sent between game objects.
     NotificationManager mNotificationManager;
+
+    int mCurrentFrame = 0;
 };
 
 }  // namespace CMPUT350
