@@ -38,9 +38,11 @@ private:
     int mLives = 3;                 // Ships left; the game ends when this reaches 0
     int mGameOverFrames = 0;        // Frames spent on the GAME OVER screen
     int mStartupFrames = 0;         // Frames spent on the LEVEL screen
+    int mRespawnFrames = 0;         // Frames left to show "LIVES LEFT" after a respawn; 0 means hidden
     int mWaveFrames = 0;            // Frames since the last wave was spawned
     int mWavesSpawned = 0;          // Waves spawned so far in this level (0 to 5)
     int mEnemiesAlive = 0;          // Enemies spawned and not yet destroyed
+    int mLevel = 1;                 // Level shown on the Startup screen; counts up when a level is cleared
 };
 
 #endif

@@ -1,11 +1,12 @@
 #include "GameEngine.h"
 
+#include <algorithm>
+
 #include "CollisionObject.h"
 #include "DrawContext.h"
 #include "GameContext.h"
 #include "GraphicsObject.h"
 #include "NotificationManager.h"
-#include <algorithm>
 
 /// @brief
 namespace CMPUT350 {
@@ -118,8 +119,7 @@ void GameEngine::AddGameObject(std::shared_ptr<GameObject> gameObject) {
  * @param key The keyboard scancode.
  * @param notification The notification message to send.
  */
-void GameEngine::InstallKeyDownNotification(
-    int key, const std::string& notification) {
+void GameEngine::InstallKeyDownNotification(int key, const std::string& notification) {
     mKeyDownNotifications[key].push_back(notification);
 }
 
@@ -129,38 +129,29 @@ void GameEngine::InstallKeyDownNotification(
  * @param key The keyboard scancode.
  * @param notification The notification message to send.
  */
-void GameEngine::InstallKeyUpNotification(
-    int key, const std::string& notification) {
+void GameEngine::InstallKeyUpNotification(int key, const std::string& notification) {
     mKeyUpNotifications[key].push_back(notification);
 }
 
 /**
  * @brief Returns an iterator to the first active game object.
  */
-EngineView::const_iterator GameEngine::begin() const {
-    return mGameObjects.begin();
-}
+EngineView::const_iterator GameEngine::begin() const { return mGameObjects.begin(); }
 
 /**
  * @brief Returns an iterator past the last active game object.
  */
-EngineView::const_iterator GameEngine::end() const {
-    return mGameObjects.end();
-}
+EngineView::const_iterator GameEngine::end() const { return mGameObjects.end(); }
 
 /**
  * @brief Returns a const iterator to the first active game object.
  */
-EngineView::const_iterator GameEngine::cbegin() const {
-    return mGameObjects.cbegin();
-}
+EngineView::const_iterator GameEngine::cbegin() const { return mGameObjects.cbegin(); }
 
 /**
  * @brief Returns a const iterator past the last active game object.
  */
-EngineView::const_iterator GameEngine::cend() const {
-    return mGameObjects.cend();
-}
+EngineView::const_iterator GameEngine::cend() const { return mGameObjects.cend(); }
 
 /**
  * @method Run
@@ -183,6 +174,7 @@ EngineView::const_iterator GameEngine::cend() const {
  * The function does not return a value.
  */
 void GameEngine::Run() {
+    int frame = 0;
     while (mWindow->isOpen())  // window is open
     {
         // Create a context for this frame so game objects can access the
@@ -190,7 +182,8 @@ void GameEngine::Run() {
         GameContext context;
         context.mEngineView = this;  // pointer to current GameEngine obj
         context.mNotificationManager = &mNotificationManager;
-        context.currentFrame = 0;
+        context.currentFrame = frame;
+        frame += 1;
         DrawContext screenContext(mWindow, mFont);
         context.ScreenContext = &screenContext;
 
@@ -214,7 +207,7 @@ void GameEngine::Run() {
         for (auto gameObject :
              mAddedGameObjects) {                // goes through every object in mAddedGameObjects
             mGameObjects.push_back(gameObject);  // adds obj to end of mGameObjects vector
-            context.CurrObject = gameObject; // 
+            context.CurrObject = gameObject;     //
             gameObject->Initialize(&context);
         }
         mAddedGameObjects.clear();
@@ -224,8 +217,7 @@ void GameEngine::Run() {
                    mWindow->pollEvent()) {         // checks all events done by player
             if (event->is<sf::Event::Closed>()) {  // checks if event was closing the window
                 mWindow->close();
-            }
-            else if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
+            } else if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
                 int key = static_cast<int>(keyPressed->scancode);
 
                 auto it = mKeyDownNotifications.find(key);
@@ -234,8 +226,7 @@ void GameEngine::Run() {
                         mNotificationManager.Notify(notification);
                     }
                 }
-            }
-            else if (const auto* keyReleased = event->getIf<sf::Event::KeyReleased>()) {
+            } else if (const auto* keyReleased = event->getIf<sf::Event::KeyReleased>()) {
                 int key = static_cast<int>(keyReleased->scancode);
 
                 auto it = mKeyUpNotifications.find(key);
@@ -375,8 +366,7 @@ void GameEngine::Run() {
                                 if (sa.shape.line.Crosses(sb.shape.line, crossingPoint)) {
                                     shapesTouch = true;
                                 }
-                            } 
-
+                            }
                         }
                     }
 
@@ -402,7 +392,8 @@ void GameEngine::Run() {
                             objA->CollisionEnter(objB);
                         }
                     } else if (shapesTouch) {
-                        // Rect vs rect or circle vs circle: no single hit point, so both get the plain message.
+                        // Rect vs rect or circle vs circle: no single hit point, so both get the
+                        // plain message.
                         objA->CollisionEnter(objB);
                         objB->CollisionEnter(objA);
                     }
@@ -450,7 +441,7 @@ void GameEngine::Run() {
             }
         }
 
-        for (auto gameObject: mGameObjects) {
+        for (auto gameObject : mGameObjects) {
             gameObject->RenderUI(&context);
         }
         // Actually render to window

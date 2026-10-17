@@ -3,8 +3,8 @@
 #include <cassert>
 
 #include "Bullet.h"
-#include "NotificationManager.h"
 #include "Enemy.h"
+#include "NotificationManager.h"
 /**
  * @brief Constructs a player at the given location.
  *
@@ -17,15 +17,25 @@ Player::Player(CMPUT350::Point2D loc) : mLoc(loc), mAlive(true) {
 /**
  * @brief Initializes the player after it is added to the game engine.
  *
+ * Registers the player for the "MoveLeft", "MoveRight" and "Fire" messages, and remembers a weak
+ * pointer to itself so the bullets it fires can name it as their parent.
+ *
  * @param context The game context containing access to the engine and screen.
  */
-void Player::Initialize(CMPUT350::GameContext* context) {}
+void Player::Initialize(CMPUT350::GameContext* context) {
+    context->mNotificationManager->Register(context->CurrObject, "MoveLeft");
+    context->mNotificationManager->Register(context->CurrObject, "MoveRight");
+    context->mNotificationManager->Register(context->CurrObject, "Fire");
+    mSelf = context->CurrObject;
+}
 
 /**
  * @brief Updates the player's state for the current frame.
  *
  * Removes weak pointers to bullets that no longer exist. This keeps the
- * player's bullet list limited to bullets that are still owned by the engine.
+ * player's bullet list limited to bullets that are still owned by the engine. If a "Fire" message
+ * arrived since the last frame, a new bullet is made, but only while fewer than two player bullets
+ * are alive.
  *
  * @param context The game context containing access to the engine and screen.
  */
@@ -40,6 +50,15 @@ void Player::Update(CMPUT350::GameContext* context) {
             it = mBullets.erase(it);  // removes expired bullet from players vector
         } else {
             ++it;  // if not expired, moves to next bullet
+        }
+    }
+    if (mFire) {
+        mFire = false;
+        if (mBullets.size() < 2) {
+            auto bullet = std::make_shared<Bullet>(CMPUT350::Point2D(mLoc.x, mLoc.y - 20),
+                                                   CMPUT350::Point2D(0, -10), true, mSelf);
+            context->mEngineView->AddGameObject(bullet);
+            mBullets.push_back(bullet);
         }
     }
 }
@@ -144,7 +163,6 @@ void Player::CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& ob
     if (enemy != nullptr) {
         Kill();
     }
-
 }
 
 /**
@@ -183,3 +201,28 @@ const CMPUT350::Rect& Player::GetBounds() {
 }
 
 const std::vector<CMPUT350::Shape>& Player::GetShapes() { return mPlayerShapes; }
+
+/**
+ * @brief Reacts to the key messages "MoveLeft", "MoveRight" and "Fire"
+ *
+ * Each move message shifts the ship 10 pixels. The x position is then limited to 20..748, so the
+ * 40 pixel wide ship stays inside the 768 pixel wide screen. "Fire" only sets mFire; Update makes
+ * the bullet because it has the game context.
+ *
+ * @param key The message that was sent
+ */
+void Player::ReceiveNotification(const std::string& key) {
+    if (key == "MoveLeft") {
+        mLoc.x -= 10;
+    } else if (key == "MoveRight") {
+        mLoc.x += 10;
+    } else if (key == "Fire") {
+        mFire = true;
+    }
+
+    if (mLoc.x < 20) {
+        mLoc.x = 20;
+    } else if (mLoc.x > 748) {
+        mLoc.x = 748;
+    }
+}

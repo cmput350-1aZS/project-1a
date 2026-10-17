@@ -12,6 +12,10 @@
  * Key 5 sends "InsertCoin" and key 1 sends "StartGame" (the MAME convention). Galaga also
  * registers for "EnemyDied" and "PlayerDied", which the enemies and the player send.
  *
+ * The player's keys are also installed here: A sends "MoveLeft", D sends "MoveRight" and Space
+ * sends "Fire". They are installed once by Galaga, not by each Player, because a new Player is
+ * made after every death and the engine would otherwise hold the same key several times.
+ *
  * @param context Gives access to the engine view and the notification manager
  */
 void Galaga::Initialize(CMPUT350::GameContext* context) {
@@ -23,13 +27,21 @@ void Galaga::Initialize(CMPUT350::GameContext* context) {
     context->mNotificationManager->Register(context->CurrObject, "StartGame");
     context->mNotificationManager->Register(context->CurrObject, "EnemyDied");
     context->mNotificationManager->Register(context->CurrObject, "PlayerDied");
+
+    context->mEngineView->InstallKeyDownNotification(static_cast<int>(sf::Keyboard::Scancode::A),
+                                                     "MoveLeft");
+    context->mEngineView->InstallKeyDownNotification(static_cast<int>(sf::Keyboard::Scancode::D),
+                                                     "MoveRight");
+    context->mEngineView->InstallKeyDownNotification(static_cast<int>(sf::Keyboard::Scancode::Space),
+                                                     "Fire");
 }
 
 /**
  * @brief Draws the text for the current state
  *
- * Waiting shows the coin prompt, Startup shows the level, GameOver shows GAME OVER, and every
- * state except Waiting shows the score and the lives remaining.
+ * Waiting shows the coin prompt, Startup shows the current level number, GameOver shows GAME OVER,
+ * and every state except Waiting shows the score and the lives remaining. For about 3 seconds
+ * after the player respawns, "LIVES LEFT n" is also shown (not during GameOver).
  *
  * @param context Provides the GUI draw context
  */
@@ -40,8 +52,8 @@ void Galaga::RenderUI(CMPUT350::GameContext* context) {
     }
 
     if (mState == State::Startup) {
-        context->GUIContext->DrawCenteredText("LEVEL 1", 32, CMPUT350::Point2D(384, 512),
-                                              CMPUT350::Colors::white);
+        context->GUIContext->DrawCenteredText("LEVEL " + std::to_string(mLevel), 32,
+                                              CMPUT350::Point2D(384, 512), CMPUT350::Colors::white);
     }
 
     if (mState != State::Waiting) {
@@ -54,6 +66,11 @@ void Galaga::RenderUI(CMPUT350::GameContext* context) {
     if (mState == State::GameOver) {
         context->GUIContext->DrawCenteredText("GAME OVER", 32, CMPUT350::Point2D(384, 512),
                                               CMPUT350::Colors::white);
+    }
+
+    if (mRespawnFrames > 0 && mState != State::GameOver) {
+        context->GUIContext->DrawCenteredText("LIVES LEFT " + std::to_string(mLives), 32,
+                                              CMPUT350::Point2D(384, 512), CMPUT350::Colors::white);
     }
 }
 
@@ -88,18 +105,36 @@ void Galaga::ReceiveNotification(const std::string& key) {
 /**
  * @brief Runs the state machine for one frame
  *
- * Spawns the player ship when one is needed, then handles the timers and the exit condition of
+ * Spawns the player ship when one is needed and every enemy is in formation (so after a death
+ * the new ship waits for the enemies to arrive), counts down the "LIVES LEFT" message timer,
+ * then handles the timers and the exit condition of
  * the current state. Each state resets the counters it used when it ends, so the next pass
  * starts from zero.
  *
  * @param context Gives access to the engine view for adding and looping over game objects
  */
 void Galaga::Update(CMPUT350::GameContext* context) {
-    // Make a new player ship whenever the game is running and there is none
-    if (mState != State::Waiting && mState != State::GameOver && !mPlayerSpawned) {
+    // allHome stays true only if no enemy is still flying in; with no enemies it is true
+    bool allHome = true;
+    for (auto object : *context->mEngineView) {
+        std::shared_ptr<Enemy> enemy = std::dynamic_pointer_cast<Enemy>(object);
+        if (enemy != nullptr && !enemy->InFormation()) {
+            allHome = false;
+        }
+    }
+    // Make a new player ship whenever the game is running, there is none, and every enemy is home
+    if (mState != State::Waiting && mState != State::GameOver && !mPlayerSpawned && allHome) {
         context->mEngineView->AddGameObject(
             std::make_shared<Player>(CMPUT350::Point2D(768 / 2, 900)));
         mPlayerSpawned = true;
+
+        if (mLives < 3) {
+            mRespawnFrames = 90;
+        }
+    }
+
+    if (mRespawnFrames > 0) {
+        mRespawnFrames -= 1;
     }
 
     // GameOver: show the message for 180 frames (about 3 seconds), then reset the whole game
@@ -114,6 +149,8 @@ void Galaga::Update(CMPUT350::GameContext* context) {
             mEnemiesAlive = 0;
             mWaveFrames = 0;
             mWavesSpawned = 0;
+            mLevel = 1;
+            mRespawnFrames = 0;
 
             // Remove the enemies that are still alive from the finished game
             for (auto object : *context->mEngineView) {
@@ -145,7 +182,7 @@ void Galaga::Update(CMPUT350::GameContext* context) {
                                                         CMPUT350::Point2D(spot.x - 150, 400),
                                                         CMPUT350::Point2D(spot.x + 150, 400), spot};
 
-                context->mEngineView->AddGameObject(std::make_shared<Enemy>(spot, route));
+                context->mEngineView->AddGameObject(std::make_shared<Enemy1>(spot, route));
                 mEnemiesAlive += 1;
             }
             mWavesSpawned += 1;
@@ -159,5 +196,6 @@ void Galaga::Update(CMPUT350::GameContext* context) {
     // GamePlay: when every enemy is destroyed, go back to Startup for the next level
     if (mState == State::GamePlay && mEnemiesAlive == 0) {
         mState = State::Startup;
+        mLevel += 1;
     }
 }

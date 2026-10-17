@@ -1,14 +1,17 @@
 #include "Enemy.h"
 
+#include <cmath>
+
 #include "Bullet.h"
 #include "NotificationManager.h"
-
 /**
- * @brief Constructs a stationary enemy centered on a point
+ * @brief Constructs an enemy that will fly along a Bezier path to its formation spot
  *
- * Enemies never move in Part 1a, so the collision box is built once here and never changes
+ * The enemy starts at the first control point of the path. Update moves it along the path and
+ * snaps it to the formation spot at the end, after which it counts as being in formation.
  *
- * @param loc Center of the enemy, in screen pixels
+ * @param loc The enemy's spot in the formation, in screen pixels
+ * @param path Control points of the Bezier curve the enemy follows to reach that spot
  */
 Enemy::Enemy(CMPUT350::Point2D loc, const std::vector<CMPUT350::Point2D>& path) {
     mEnemyLocation = loc;
@@ -24,6 +27,17 @@ Enemy::Enemy(CMPUT350::Point2D loc, const std::vector<CMPUT350::Point2D>& path) 
 
 void Enemy::Initialize(CMPUT350::GameContext* context) {}
 
+/**
+ * @brief Moves the enemy one step along its entry path
+ *
+ * While the enemy is not in formation, mT advances by 0.01 per frame and the enemy is placed at
+ * that point of the Bezier curve; its collision box moves with it. When mT reaches 1 the enemy is
+ * snapped to its formation spot and counts as in formation. Once in formation, the enemy hovers:
+ * it swings up to 10 pixels left and right of its spot, following a sine of the engine's frame
+ * number, so every enemy swings together.
+ *
+ * @param context Provides the current frame number for the hover
+ */
 void Enemy::Update(CMPUT350::GameContext* context) {
     if (!mInFormation) {
         mT += 0.01f;
@@ -35,6 +49,10 @@ void Enemy::Update(CMPUT350::GameContext* context) {
             mEnemyLocation = mFormationLoc;
             mEnemyBounds = CMPUT350::Rect(mEnemyLocation, 8.0f);
         }
+    } else {
+        mEnemyLocation = CMPUT350::Point2D(
+            mFormationLoc.x + 10 * std::sin(context->currentFrame * 0.1f), mFormationLoc.y);
+        mEnemyBounds = CMPUT350::Rect(mEnemyLocation, 8.0f);
     }
 }
 
@@ -122,3 +140,25 @@ bool Enemy::IsAlive() const {
 const CMPUT350::Rect& Enemy::GetBounds() { return mEnemyBounds; }
 
 const std::vector<CMPUT350::Shape>& Enemy::GetShapes() { return mEnemyShapes; }
+
+/**
+ * @brief Reports whether the enemy has finished its entry path and reached its formation spot
+ *
+ * Galaga uses this to wait until every enemy is home before it respawns the player.
+ *
+ * @return True once the enemy is in formation, false while it is still flying in
+ */
+bool Enemy::InFormation() const { return mInFormation; }
+
+/**
+ * @brief Attack for the first enemy type
+ *
+ * Placeholder: this enemy cannot attack yet, so it always answers false.
+ *
+ * @param context Unused for now
+ * @param target Unused for now
+ * @return Always false
+ */
+bool Enemy1::Attack(CMPUT350::GameContext* context, const CMPUT350::Point2D& target) {
+    return false;
+}

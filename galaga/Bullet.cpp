@@ -8,8 +8,9 @@
  * @param location Starting position of the bullet, in screen pixels
  * @param heading Distance the bullet moves per frame (x and y); a negative y moves it up
  * @param player True if the player fired this bullet, false if an enemy did
+ * @param parent The object that fired the bullet; held weakly, so the bullet does not keep it alive
  */
-Bullet::Bullet(CMPUT350::Point2D location, CMPUT350::Point2D heading, bool player) {
+Bullet::Bullet(CMPUT350::Point2D location, CMPUT350::Point2D heading, bool player, std::weak_ptr<CMPUT350::GameObject> parent) {
     mLocation = location;
     mHeading = heading;
     mPlayerBullet = player;
@@ -19,7 +20,8 @@ Bullet::Bullet(CMPUT350::Point2D location, CMPUT350::Point2D heading, bool playe
     mBounds = CMPUT350::Rect(location, location);
 
     mShapes.push_back(CMPUT350::Line(CMPUT350::Point2D(0, 0) - mHeading, CMPUT350::Point2D(0, 0)));
-}
+    mParent = parent;
+}   
 
 /**
  * @brief Reports which side fired this bullet
@@ -41,7 +43,8 @@ void Bullet::Initialize(CMPUT350::GameContext* context) {
  * @brief Moves the bullet one step along its heading and refreshes its collision box
  *
  * The bullet removes itself once it leaves the top of the screen so it does not
- * linger in the engine's object list forever.
+ * linger in the engine's object list forever. It also removes itself when the object that fired
+ * it no longer exists or is dead.
  *
  * @param context Unused
  */
@@ -57,6 +60,12 @@ void Bullet::Update(CMPUT350::GameContext* context) {
 
     // y = 0 is the top of the screen, so y < 0 means the bullet has flown off it
     if (mLocation.y < 0) {
+        Kill();
+    }
+
+    // lock() gives a real pointer to the parent, or nullptr if the parent has been destroyed
+    std::shared_ptr<CMPUT350::GameObject> owner = mParent.lock();
+    if (owner == nullptr || !owner->IsAlive()) {
         Kill();
     }
 }
