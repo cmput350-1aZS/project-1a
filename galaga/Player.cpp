@@ -163,6 +163,11 @@ void Player::CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& ob
     if (enemy != nullptr) {
         Kill();
     }
+
+    std::shared_ptr<Bullet> bullet = std::dynamic_pointer_cast<Bullet>(obj);
+    if (bullet != nullptr && !bullet->IsPlayerBullet()) {
+        Kill();
+    }
 }
 
 /**

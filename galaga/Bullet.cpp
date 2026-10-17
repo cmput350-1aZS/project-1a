@@ -1,8 +1,9 @@
 #include "Bullet.h"
 
-#include "Enemy.h"
-
 #include <memory>
+
+#include "Enemy.h"
+#include "Player.h"
 
 /**
  * @brief Constructs a bullet at a starting position that moves by a fixed step each frame
@@ -86,7 +87,7 @@ void Bullet::LateUpdate(CMPUT350::GameContext* context) {
  * @param key Unused
  * @return Always false, meaning the bullet did not use the key
  */
-//bool Bullet::HandleKeyEvent(CMPUT350::GameContext* context, char key) { return false; }
+// bool Bullet::HandleKeyEvent(CMPUT350::GameContext* context, char key) { return false; }
 
 /**
  * @brief Draws the background layer; a bullet has no background graphics
@@ -140,8 +141,12 @@ float Bullet::GetRotation() const { return 0; }
 void Bullet::CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& obj) {
     // dynamic_pointer_cast returns nullptr unless obj really is an Enemy
     std::shared_ptr<Enemy> enemy = std::dynamic_pointer_cast<Enemy>(obj);
-
+    std::shared_ptr<Player> player = std::dynamic_pointer_cast<Player>(obj);
     if (enemy != nullptr && mPlayerBullet) {
+        Kill();
+    }
+
+    if (player != nullptr && !mPlayerBullet) {
         Kill();
     }
 }
