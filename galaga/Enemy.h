@@ -68,6 +68,7 @@ private:
     ) const;
 
     CMPUT350::Point2D mLocation;
+    float mRotation = 0.0f;
     CMPUT350::Point2D mFormationLocation;
     CMPUT350::Rect mEnemyBounds;
     std::vector<CMPUT350::Shape> mEnemyShapes;  // The one rectangle returned by GetShapes
