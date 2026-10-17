@@ -174,7 +174,6 @@ EngineView::const_iterator GameEngine::cend() const { return mGameObjects.cend()
  * The function does not return a value.
  */
 void GameEngine::Run() {
-    int frame = 0;
     while (mWindow->isOpen())  // window is open
     {
         // Create a context for this frame so game objects can access the
@@ -182,8 +181,7 @@ void GameEngine::Run() {
         GameContext context;
         context.mEngineView = this;  // pointer to current GameEngine obj
         context.mNotificationManager = &mNotificationManager;
-        context.currentFrame = frame;
-        frame += 1;
+        context.currentFrame = mCurrentFrame;
         DrawContext screenContext(mWindow, mFont);
         context.ScreenContext = &screenContext;
 
@@ -207,7 +205,7 @@ void GameEngine::Run() {
         for (auto gameObject :
              mAddedGameObjects) {                // goes through every object in mAddedGameObjects
             mGameObjects.push_back(gameObject);  // adds obj to end of mGameObjects vector
-            context.CurrObject = gameObject;     //
+            context.CurrObject = gameObject;     // lets the object register itself in Initialize
             gameObject->Initialize(&context);
         }
         mAddedGameObjects.clear();
@@ -241,6 +239,7 @@ void GameEngine::Run() {
         // 3. Update game objects
         // Each active object gets one opportunity to update its state for this frame.
         for (auto gameObject : mGameObjects) {
+            context.CurrObject = gameObject;
             gameObject->Update(&context);  // updates every active game object's function
         }
 
@@ -446,6 +445,7 @@ void GameEngine::Run() {
         }
         // Actually render to window
         mWindow->display();
+        ++mCurrentFrame;
     }
 }
 

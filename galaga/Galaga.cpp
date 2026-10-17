@@ -25,15 +25,19 @@ void Galaga::Initialize(CMPUT350::GameContext* context) {
                                                      "StartGame");
     context->mNotificationManager->Register(context->CurrObject, "InsertCoin");
     context->mNotificationManager->Register(context->CurrObject, "StartGame");
-    context->mNotificationManager->Register(context->CurrObject, "EnemyDied");
+    context->mNotificationManager->Register(context->CurrObject, "EnemyDestroyed_Scout_100");
+    context->mNotificationManager->Register(context->CurrObject, "EnemyDestroyed_Fighter_200");
+    context->mNotificationManager->Register(context->CurrObject, "EnemyDestroyed_Tank_300");
+    context->mNotificationManager->Register(context->CurrObject,
+                                            "EnemyDestroyed_FormationBonus_50");
     context->mNotificationManager->Register(context->CurrObject, "PlayerDied");
 
     context->mEngineView->InstallKeyDownNotification(static_cast<int>(sf::Keyboard::Scancode::A),
                                                      "MoveLeft");
     context->mEngineView->InstallKeyDownNotification(static_cast<int>(sf::Keyboard::Scancode::D),
                                                      "MoveRight");
-    context->mEngineView->InstallKeyDownNotification(static_cast<int>(sf::Keyboard::Scancode::Space),
-                                                     "Fire");
+    context->mEngineView->InstallKeyDownNotification(
+        static_cast<int>(sf::Keyboard::Scancode::Space), "Fire");
 }
 
 /**
@@ -77,9 +81,12 @@ void Galaga::RenderUI(CMPUT350::GameContext* context) {
 /**
  * @brief Reacts to a message sent through the notification manager
  *
- * "InsertCoin" adds a credit. "StartGame" starts a game if a coin was inserted. "EnemyDied"
- * adds 100 points and lowers the enemy count, but only while enemies are in play, so the
- * clean-up at game over does not score. "PlayerDied" costs a life and asks for a new ship.
+ * "InsertCoin" adds a credit. "StartGame" starts a game if a coin was inserted. Enemies send
+ * "EnemyDestroyed_<type>_<score>" when they die: the score is the number after the last
+ * underscore, and the enemy count goes down by one. "EnemyDestroyed_FormationBonus_50" adds 50
+ * more for an enemy killed out of formation and does not change the count. Both count only
+ * while enemies are in play, so the clean-up at game over does not score. "PlayerDied" costs a
+ * life and asks for a new ship.
  * The game is over once no lives are left.
  *
  * @param key The message that was sent
@@ -89,8 +96,12 @@ void Galaga::ReceiveNotification(const std::string& key) {
         mCredits += 1;
     } else if (key == "StartGame" && mState == State::Waiting && mCredits > 0) {
         mState = State::Startup;
-    } else if (key == "EnemyDied" && (mState == State::Waves || mState == State::GamePlay)) {
-        mScore += 100;
+    } else if (key == "EnemyDestroyed_FormationBonus_50" &&
+               (mState == State::Waves || mState == State::GamePlay)) {
+        mScore += 50;
+    } else if (key.starts_with("EnemyDestroyed_") &&
+               (mState == State::Waves || mState == State::GamePlay)) {
+        mScore += std::stoi(key.substr(key.rfind('_') + 1));
         mEnemiesAlive -= 1;
     } else if (key == "PlayerDied") {
         mLives -= 1;
@@ -118,7 +129,7 @@ void Galaga::Update(CMPUT350::GameContext* context) {
     bool allHome = true;
     for (auto object : *context->mEngineView) {
         std::shared_ptr<Enemy> enemy = std::dynamic_pointer_cast<Enemy>(object);
-        if (enemy != nullptr && !enemy->InFormation()) {
+        if (enemy != nullptr && !enemy->IsInFormation()) {
             allHome = false;
         }
     }
@@ -182,7 +193,15 @@ void Galaga::Update(CMPUT350::GameContext* context) {
                                                         CMPUT350::Point2D(spot.x - 150, 400),
                                                         CMPUT350::Point2D(spot.x + 150, 400), spot};
 
-                context->mEngineView->AddGameObject(std::make_shared<Enemy1>(spot, route));
+                if (i % 3 == 0) {
+                    context->mEngineView->AddGameObject(std::make_shared<ScoutEnemy>(spot, route));
+                } else if (i % 3 == 1) {
+                    context->mEngineView->AddGameObject(
+                        std::make_shared<FighterEnemy>(spot, route));
+                } else {
+                    context->mEngineView->AddGameObject(std::make_shared<TankEnemy>(spot, route));
+                }
+
                 mEnemiesAlive += 1;
             }
             mWavesSpawned += 1;

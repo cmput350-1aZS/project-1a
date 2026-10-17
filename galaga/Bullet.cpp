@@ -2,6 +2,8 @@
 
 #include "Enemy.h"
 
+#include <memory>
+
 /**
  * @brief Constructs a bullet at a starting position that moves by a fixed step each frame
  *
@@ -10,18 +12,19 @@
  * @param player True if the player fired this bullet, false if an enemy did
  * @param parent The object that fired the bullet; held weakly, so the bullet does not keep it alive
  */
-Bullet::Bullet(CMPUT350::Point2D location, CMPUT350::Point2D heading, bool player, std::weak_ptr<CMPUT350::GameObject> parent) {
+Bullet::Bullet(CMPUT350::Point2D location, CMPUT350::Point2D heading, bool player,
+               std::weak_ptr<CMPUT350::GameObject> parent) {
     mLocation = location;
     mHeading = heading;
     mPlayerBullet = player;
+    mParent = parent;
     mBulletAlive = true;
     // The bullet has not moved yet, so its previous and current positions are the same
     // and the collision box starts out with zero size
     mBounds = CMPUT350::Rect(location, location);
 
     mShapes.push_back(CMPUT350::Line(CMPUT350::Point2D(0, 0) - mHeading, CMPUT350::Point2D(0, 0)));
-    mParent = parent;
-}   
+}
 
 /**
  * @brief Reports which side fired this bullet
@@ -49,6 +52,14 @@ void Bullet::Initialize(CMPUT350::GameContext* context) {
  * @param context Unused
  */
 void Bullet::Update(CMPUT350::GameContext* context) {
+    // lock() gives a real pointer to the parent, or nullptr if the parent has been destroyed;
+    // a bullet is removed if the object that fired it is gone or no longer alive
+    std::shared_ptr<CMPUT350::GameObject> parent = mParent.lock();
+    if (parent == nullptr || !parent->IsAlive()) {
+        Kill();
+        return;
+    }
+
     // Remember where the bullet was before it moves
     CMPUT350::Point2D old = mLocation;
     mLocation += mHeading;
@@ -58,14 +69,8 @@ void Bullet::Update(CMPUT350::GameContext* context) {
     mBounds.Inset(-2);  // Negative inset grows the box by 2 pixels per side, so a straight-up
                         // bullet has some width to overlap with
 
-    // y = 0 is the top of the screen, so y < 0 means the bullet has flown off it
-    if (mLocation.y < 0) {
-        Kill();
-    }
-
-    // lock() gives a real pointer to the parent, or nullptr if the parent has been destroyed
-    std::shared_ptr<CMPUT350::GameObject> owner = mParent.lock();
-    if (owner == nullptr || !owner->IsAlive()) {
+    // y = 0 is the top of the screen and 1024 the bottom, so a bullet outside that range is gone
+    if (mLocation.y < 0 || mLocation.y > 1024) {
         Kill();
     }
 }
@@ -109,8 +114,9 @@ void Bullet::RenderForeground(CMPUT350::GameContext* context) {
 
     // AI-assisted: this DrawLine call was provided by Claude when asked how to draw the bullet as a
     // line
+    CMPUT350::RGBColor color = mPlayerBullet ? CMPUT350::Colors::blue : CMPUT350::Colors::red;
     context->ScreenContext->DrawLine(CMPUT350::Point2D(0, 0), CMPUT350::Point2D(0, 0) - mHeading, 2,
-                                     CMPUT350::Colors::blue);
+                                     color);
 }
 
 /**
@@ -135,7 +141,7 @@ void Bullet::CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& ob
     // dynamic_pointer_cast returns nullptr unless obj really is an Enemy
     std::shared_ptr<Enemy> enemy = std::dynamic_pointer_cast<Enemy>(obj);
 
-    if (enemy != nullptr) {
+    if (enemy != nullptr && mPlayerBullet) {
         Kill();
     }
 }

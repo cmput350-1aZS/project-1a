@@ -118,7 +118,8 @@ private:
     // Manages notifications sent between game objects.
     NotificationManager mNotificationManager;
 
-    
+    // Number of frames the engine has run; handed to objects as context.currentFrame.
+    int mCurrentFrame = 0;
 };
 
 }  // namespace CMPUT350

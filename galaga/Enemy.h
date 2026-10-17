@@ -1,13 +1,33 @@
 #ifndef ENEMY_H
 #define ENEMY_H
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "CollisionObject.h"
 #include "GameContext.h"
 #include "Bezier.h"
+#include "CollisionObject.h"
+#include "GameContext.h"
 
 class Enemy : public CMPUT350::CollisionObject {
 public:
-    Enemy(CMPUT350::Point2D loc, const std::vector<CMPUT350::Point2D>& path);
+    Enemy(
+        CMPUT350::Point2D formationLocation,
+        const std::vector<CMPUT350::Point2D>& entryPath,
+        int health,
+        int score,
+        float movementSpeed,
+        int attackCooldown,
+        float bulletSpeed,
+        float attackArcX,
+        float attackArcY,
+        float hoverPhase,
+        const std::string& enemyType
+    );
+
+    ~Enemy() override = default;
 
     // GameObject Functions
     void Initialize(CMPUT350::GameContext* context) override;
@@ -26,53 +46,125 @@ public:
     const CMPUT350::Rect& GetBounds() override;
 
     CMPUT350::Point2D GetLocation() const override;
-    float GetRotation() const override; 
+    float GetRotation() const override;
 
+    // Merge fix: the collision API from the 1b engine requires every collision object to give shapes
     const std::vector<CMPUT350::Shape>& GetShapes() override;
 
-    /**
-     * @brief Asks the enemy to start an attack on a target
-     *
-     * Pure virtual (= 0): Enemy has no attack of its own, so every concrete enemy type must supply
-     * one, and Enemy itself can no longer be created directly.
-     *
-     * @param context Gives access to the engine, for example to add bullets
-     * @param target The point the enemy should attack, usually the player's position
-     * @return True if the enemy began an attack, false if it cannot attack right now
-     */
-    virtual bool Attack(CMPUT350::GameContext *context, const CMPUT350::Point2D &target) = 0;
+    // Public (was protected) so Galaga can check that every enemy is home before respawning the player
+    bool IsInFormation() const;
 
-    /**
-     * @brief Reports whether the enemy has reached its formation spot
-     *
-     * @return True once the enemy has finished its entry path
-     */
-    bool InFormation() const;
+    // returns true when this enemy starts attack
+    virtual bool Attack(
+        CMPUT350::GameContext* context,
+        const CMPUT350::Point2D& target
+    ) = 0;
 
 private:
-    CMPUT350::Point2D mEnemyLocation;  // Center of the enemy, in screen pixels
-    bool mEnemyAlive;  // False once Kill has been called; the engine then removes the enemy
-    CMPUT350::Rect
-        mEnemyBounds;  // Fixed box centered on mEnemyLocation, used for drawing and collisions
-    
-    std::vector<CMPUT350::Shape> mEnemyShapes;
+    void SetPath(const std::vector<CMPUT350::Point2D>& controlPoints);
+    void AdvancePath();
+    bool AllEnemiesHaveEnteredFormation(
+        CMPUT350::GameContext* context
+    ) const;
 
-    std::vector<CMPUT350::Point2D> mPath;
-    float mT;
-    CMPUT350::Point2D mFormationLoc;
-    bool mInFormation;
+    CMPUT350::Point2D mLocation;
+    CMPUT350::Point2D mFormationLocation;
+    CMPUT350::Rect mEnemyBounds;
+    std::vector<CMPUT350::Shape> mEnemyShapes;  // The one rectangle returned by GetShapes
+
+    std::vector<CMPUT350::Point2D> mPathControlPoints;
+    std::vector<CMPUT350::Point2D> mPathSamples;
+    std::vector<float> mPathDistances;
+
+    float mPathDistance = 0.0f;
+    float mPathLength = 0.0f;
+
+    float mMovementSpeed;
+    float mBulletSpeed;
+    float mAttackArcX;
+    float mAttackArcY;
+    float mHoverPhase;
+
+    int mHealth;
+    int mScore;
+    int mAttackCooldown;
+    int mNextAttackFrame = 0;
+
+    bool mAlive = true;
+    bool mPathActive = false;
+    bool mHasEnteredFormation = false;
+    bool mInFormation = false;
+
+    std::string mEnemyType;
+
+    CMPUT350::NotificationManager* mNotificationManager = nullptr;
+
+protected:
+    bool BeginAttack(
+        CMPUT350::GameContext* context,
+        const CMPUT350::Point2D& target
+    );
+
+    void FireAt(
+        CMPUT350::GameContext* context,
+        const CMPUT350::Point2D& target
+    );
+
+    void DrawEnemy(
+        CMPUT350::GameContext* context,
+        float halfWidth,
+        float halfHeight
+    );
+
+    float mSize = 8.0f;
 };
 
-/**
- * @brief The first concrete enemy type
- *
- * It inherits all the movement, drawing and collision behavior of Enemy and supplies the Attack
- * function that Enemy leaves unfinished. Enemy2 and Enemy3 will follow the same pattern.
- */
-class Enemy1 : public Enemy {
+// type 1: fast, one health, relatively frequent attacks
+class ScoutEnemy : public Enemy {
 public:
-    Enemy1(CMPUT350::Point2D loc, const std::vector<CMPUT350::Point2D> &path):Enemy(loc, path){}
-    virtual bool Attack(CMPUT350::GameContext *context, const CMPUT350::Point2D &target) override;
+    ScoutEnemy(
+        CMPUT350::Point2D formationLocation,
+        const std::vector<CMPUT350::Point2D>& entryPath
+    );
 
+    bool Attack(
+        CMPUT350::GameContext* context,
+        const CMPUT350::Point2D& target
+    ) override;
+
+    void RenderForeground(CMPUT350::GameContext* context) override;
 };
+
+// type 2: med speed, one health, different attack
+class FighterEnemy : public Enemy {
+public:
+    FighterEnemy(
+        CMPUT350::Point2D formationLocation,
+        const std::vector<CMPUT350::Point2D>& entryPath
+    );
+
+    bool Attack(
+        CMPUT350::GameContext* context,
+        const CMPUT350::Point2D& target
+    ) override;
+
+    void RenderForeground(CMPUT350::GameContext* context) override;
+};
+
+// type 3: slow, two health
+class TankEnemy : public Enemy {
+public:
+    TankEnemy(
+        CMPUT350::Point2D formationLocation,
+        const std::vector<CMPUT350::Point2D>& entryPath
+    );
+
+    bool Attack(
+        CMPUT350::GameContext* context,
+        const CMPUT350::Point2D& target
+    ) override;
+
+    void RenderForeground(CMPUT350::GameContext* context) override;
+};
+
 #endif
