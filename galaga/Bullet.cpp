@@ -13,7 +13,7 @@
  * @param player True if the player fired this bullet, false if an enemy did
  * @param parent The object that fired the bullet; held weakly, so the bullet does not keep it alive
  */
-Bullet::Bullet(CMPUT350::Point2D location, CMPUT350::Point2D heading, bool player,
+Bullet::Bullet(CMPUT350::Point2D location, CMPUT350::Vector2D heading, bool player,
                std::weak_ptr<CMPUT350::GameObject> parent) {
     mLocation = location;
     mHeading = heading;

@@ -141,10 +141,10 @@ void DrawContext::FrameRect(Rect r, float width, RGBColor c) {
 void DrawContext::DrawLine(Point2D from, Point2D to, float width, RGBColor c) {
     Point2D transformedFromPos = Transform(from);
     Point2D transformedFromTo = Transform(to);
-    Point2D direction = transformedFromTo - transformedFromPos;
+    Vector2D direction = transformedFromTo - transformedFromPos;
     direction.Normalize();
-    Point2D perpendicular(-direction.y, direction.x);
-    Point2D offset = perpendicular * (width / 2.0f);
+    Vector2D perpendicular(-direction.y, direction.x);
+    Vector2D offset = perpendicular * (width / 2.0f);
 
     Point2D p0 = transformedFromPos + offset;
     Point2D p1 = transformedFromTo + offset;

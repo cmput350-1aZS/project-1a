@@ -56,7 +56,7 @@ void Player::Update(CMPUT350::GameContext* context) {
         mFire = false;
         if (mBullets.size() < 2) {
             auto bullet = std::make_shared<Bullet>(CMPUT350::Point2D(mLoc.x, mLoc.y - 20),
-                                                   CMPUT350::Point2D(0, -10), true, mSelf);
+                                                   CMPUT350::Vector2D(0, -10), true, mSelf);
             context->mEngineView->AddGameObject(bullet);
             mBullets.push_back(bullet);
         }
