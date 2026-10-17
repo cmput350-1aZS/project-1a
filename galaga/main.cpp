@@ -81,7 +81,7 @@ public:
         return bounds;
     }
 
-    const std::vector<CMPUT350::Shape>& GetShapes() { return mBallShapes; }
+    const std::vector<CMPUT350::Shape>& GetShapes() override { return mBallShapes; }
 
     bool IsAlive() const override { return mNumCollisions < 10; }
 
