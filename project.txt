@@ -77,10 +77,18 @@ One entry per milestone: what exists, which files, how it works in a few lines.
   - When mHasHit is true, RenderForeground draws a circle at the hit point instead of the line.
 
 [M5] Bezier support 
+  - Added Bezier curve support for enemy movement, allowing enemies to follow curved paths instead of moving directly to their destination.
+  - Enemy.cpp uses cubic Bezier curves to construct enemy movement paths. The Scout enemy's BeginAttack builds a two-segment cubic Bezier path from its current position toward the player's position and then back toward its formation position.
+  - The attack path uses seven control points to define two connected cubic Bezier segments.
+  - ScoutEnemy initialization sets its starting position before it follows its movement path.
 
 
 [M6] Notification manager and object iteration 
-
+  - Enemy uses NotificationManager from GameContext to communicate events through the engine's notification system instead of depending directly on Galaga.
+  - Enemy uses EngineView to iterate through game objects and check whether living enemies have entered formation.
+  - Enemy::Update searches the engine objects for a living Player, allowing the enemy to locate the player without storing a direct pointer to it.
+  - FireAt creates a Bullet and adds it to the engine through EngineView.
+  - Enemy::Kill uses NotificationManager to send notifications, allowing other objects such as Galaga to respond to events without direct dependencies.
 
 [M7] Galaga game manager (rubric 5, 20 pts), by Zifan
   - galaga/Galaga.h and Galaga.cpp. The program starts by adding one Galaga object (and the Stars) to the engine. Galaga
@@ -131,6 +139,15 @@ One entry per milestone: what exists, which files, how it works in a few lines.
   - RenderForeground checks mHasHit and not IsAlive() because the bullet could go off the screen, and then it is not alive but has 
     no point to draw a circle at.  
 
+[M5] Bezier curves and enemy movement
+  - The attack path uses two connected cubic Bezier segments because a single curve would not provide as much control over the enemy's movement toward the player and back toward formation.
+  - The seven control points define the two connected segments, allowing the enemy to change direction smoothly between the player's position and its formation position.
+  - The Scout enemy implementation provides a starting point for the other enemy types, while their movement behavior can be adapted to their own requirements.
+
+[M6] NotificationManager and EngineView
+  - Enemy uses NotificationManager to communicate events without calling Galaga directly. This reduces the dependency between the game objects and the game manager.
+  - Enemy uses EngineView to find the Player and inspect other enemies instead of maintaining direct pointers to each object. This lets it work with the objects currently managed by the engine.
+  - FireAt adds bullets through EngineView rather than directly modifying the engine's internal object collection, keeping object creation within the engine's provided interface.
 
 [M7] Galaga game manager
   - Galaga creates, counts and removes the enemies and the player, not main(). Only the manager knows when a game or a
@@ -181,6 +198,8 @@ Zifan:
 Sarang:
   - M5 Bezier curves.
   - M6 NotificationManager, EngineView 
+  - MathUtil implementation
+  - GameObject and GameEngine changes along with EngineView implementations
 
 6. EXTRA CREDIT
 ---------------
@@ -265,4 +284,48 @@ M4[Collision objects in the game, bullets end on the object]
 
 SARANG
 ======
-TODO: 
+
+M5[Bezier curves and enemy movement]
+
+  Code written with AI help
+    OPENAI helped draft and revise parts of the enemy implementation in
+    galaga/Enemy.cpp with constructing Scout location, I used it to work through 
+    other enemy as a blueprint. I also sampled Bezier begin attack.
+
+    galaga/Enemy.cpp: 319-327
+      BeginAttack: builds a two-segment cubic Bezier path from the enemy's
+      current position toward the player's position and back toward formation.
+
+    galaga/Enemy.cpp: 547-561
+      ScoutEnemy initialization position. 
+    
+
+  Reflection
+    - The attack path uses seven control points, which form two connected
+      cubic Bezier segments.
+    - The code still needs to be built and tested against the final project.
+      The complete game loop has not been confirmed as play-tested here.
+    - Before submission, check that the collision rectangle dimensions match
+      the dimensions intended by the drawing code, and confirm that the
+      attack and formation behavior matches the project requirements.
+
+
+M6[NotificationManager and EngineView]
+
+  Code I wrote with AI help
+  The AI helped review how the enemy implementation uses the existing engine interfaces. I typed and adapted the code with AI assistance.
+
+galaga/Enemy.cpp
+  Initialize: storing the NotificationManager from GameContext so the enemy can send notifications through the engine.
+
+  AllEnemiesHaveEnteredFormation: iterating through EngineView to check whether all living enemies have entered formation.
+
+  Update: searching the engine objects through EngineView to find a living Player.
+
+
+  
+
+  Reflection
+    - EngineView lets Enemy access other game objects without requiring direct pointers to the Player or other enemies.
+    - NotificationManager allows Enemy to communicate events through notifications instead of depending directly on Galaga.
+    - A key detail is that the notification names must match between Enemy and Galaga for the manager to respond to the events correctly.
