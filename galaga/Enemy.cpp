@@ -145,8 +145,6 @@ void Enemy::LateUpdate(CMPUT350::GameContext* context) {
     (void)context;
 }
 
-//bool Enemy::HandleKeyEvent(CMPUT350::GameContext* context, char key) { return false; }
-
 /**
  * @brief Sets up the control points and distance samples for a Bezier path.
  *

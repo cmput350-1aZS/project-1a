@@ -47,16 +47,6 @@ public:
     void LateUpdate(CMPUT350::GameContext* context) override;
 
     /**
-     * @brief Handles keyboard input for the player.
-     *
-     * @param context The game context used by the player.
-     * @param key The keyboard character received by the player.
-     *
-     * @return true if the player handled the key, otherwise false.
-     */
-    //bool HandleKeyEvent(CMPUT350::GameContext* context, char key) override;
-
-    /**
      * @brief Checks whether the player is still alive.
      *
      * @return true if the player is alive, otherwise false.

@@ -81,15 +81,6 @@ void Bullet::LateUpdate(CMPUT350::GameContext* context) {
 }
 
 /**
- * @brief Called for every key press; a bullet ignores keys
- *
- * @param context Unused
- * @param key Unused
- * @return Always false, meaning the bullet did not use the key
- */
-// bool Bullet::HandleKeyEvent(CMPUT350::GameContext* context, char key) { return false; }
-
-/**
  * @brief Draws the background layer; a bullet has no background graphics
  *
  * @param context Unused
@@ -133,13 +124,13 @@ float Bullet::GetRotation() const { return 0; }
 /**
  * @brief Called by the engine when this bullet's box overlaps another collision object
  *
- * The bullet is removed when it hits an Enemy and ignores everything else, such as
- * the player who fired it or other bullets.
+ * A player bullet is removed when it hits an Enemy, and an enemy bullet is removed when it hits
+ * the Player. Everything else is ignored, such as the ship that fired the bullet or other bullets.
  *
  * @param obj The object this bullet overlapped
  */
 void Bullet::CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& obj) {
-    // dynamic_pointer_cast returns nullptr unless obj really is an Enemy
+    // dynamic_pointer_cast returns nullptr unless obj really is that type (Enemy or Player)
     std::shared_ptr<Enemy> enemy = std::dynamic_pointer_cast<Enemy>(obj);
     std::shared_ptr<Player> player = std::dynamic_pointer_cast<Player>(obj);
     if (enemy != nullptr && mPlayerBullet) {
@@ -154,7 +145,7 @@ void Bullet::CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& ob
 /**
  * @brief Called by the engine when this bullet's line hits another collision object
  *
- * Forwards to the one-argument version, which kills the bullet if the object is an Enemy.
+ * Forwards to the one-argument version, which kills the bullet if it hit its target.
  * If that killed the bullet, the hit point is kept so RenderForeground can draw a circle there.
  * When one frame brings several hit points, the one with the largest y (lowest on screen) is kept.
  *
