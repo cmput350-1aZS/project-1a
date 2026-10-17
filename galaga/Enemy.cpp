@@ -474,6 +474,20 @@ const CMPUT350::Rect& Enemy::GetBounds() {
     return mEnemyBounds;
 }
 
+/**
+ * @brief Gives the engine the shapes used for collision checks
+ *
+ * Merge fix, AI-written: the enemy is one rectangle centered on its own origin, sized by mSize,
+ * so each enemy type gets a box matching how big it is drawn.
+ *
+ * @return A vector holding the single rectangle, in the enemy's local coordinates
+ */
+const std::vector<CMPUT350::Shape>& Enemy::GetShapes() {
+    mEnemyShapes.clear();
+    mEnemyShapes.push_back(CMPUT350::Rect(CMPUT350::Point2D(0, 0), mSize));
+    return mEnemyShapes;
+}
+
 
 // -----------------------------------------------------------------------------
 // ScoutEnemy

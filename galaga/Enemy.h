@@ -46,7 +46,13 @@ public:
     const CMPUT350::Rect& GetBounds() override;
 
     CMPUT350::Point2D GetLocation() const override;
-    float GetRotation() const override; 
+    float GetRotation() const override;
+
+    // Merge fix: the collision API from the 1b engine requires every collision object to give shapes
+    const std::vector<CMPUT350::Shape>& GetShapes() override;
+
+    // Public (was protected) so Galaga can check that every enemy is home before respawning the player
+    bool IsInFormation() const;
 
     // returns true when this enemy starts attack
     virtual bool Attack(
@@ -64,6 +70,7 @@ private:
     CMPUT350::Point2D mLocation;
     CMPUT350::Point2D mFormationLocation;
     CMPUT350::Rect mEnemyBounds;
+    std::vector<CMPUT350::Shape> mEnemyShapes;  // The one rectangle returned by GetShapes
 
     std::vector<CMPUT350::Point2D> mPathControlPoints;
     std::vector<CMPUT350::Point2D> mPathSamples;
@@ -108,8 +115,6 @@ protected:
         float halfWidth,
         float halfHeight
     );
-
-    bool IsInFormation() const;
 
     float mSize = 8.0f;
 };

@@ -105,6 +105,19 @@ public:
      */
     const CMPUT350::Rect& GetBounds() override;
 
+    const std::vector<CMPUT350::Shape>& GetShapes() override;
+
+    /**
+     * @brief Reacts to the key messages "MoveLeft", "MoveRight" and "Fire".
+     *
+     * Moving changes the player's x position and keeps it on the screen. "Fire" only sets a flag,
+     * because this function has no game context and so cannot add a bullet to the engine.
+     *
+     * @param key The message that was sent.
+     */
+    void ReceiveNotification(const std::string& key) override;
+
+
 private:
     // The player's current position.
     CMPUT350::Point2D mLoc;
@@ -115,6 +128,12 @@ private:
     // Stores weak references to the player's bullets without owning them.
     std::vector<std::weak_ptr<Bullet>> mBullets; // player's bullet vector to observe but not own bullets
 
+    std::vector<CMPUT350::Shape> mPlayerShapes;
+    // True when a "Fire" message arrived and Update has not made the bullet yet.
+    bool mFire = false;
+
+    // Weak pointer to this player itself, given to each bullet as its parent.
+    std::weak_ptr<CMPUT350::GameObject> mSelf;
 };
 
 #endif

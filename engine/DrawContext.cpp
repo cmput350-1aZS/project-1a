@@ -1,5 +1,6 @@
 #include "DrawContext.h"
 #include <cmath>
+#include <algorithm>
 
 namespace CMPUT350 {
 
@@ -222,6 +223,26 @@ Point2D DrawContext::ReverseTransform(Point2D p) {
     float newY = shifted.x * sine + shifted.y * cosine;
 
     return Point2D (newX, newY);
+
+}
+
+Rect DrawContext::Transform(Rect r) {
+    Point2D topLeft = r.topLeft;
+    Point2D topRight = Point2D(r.topLeft.x + r.width, r.topLeft.y);
+    Point2D bottomLeft = Point2D(r.topLeft.x, r.topLeft.y + r.height);
+    Point2D bottomRight = Point2D(topRight.x, topRight.y + r.height);
+
+    Point2D newTopLeft = Transform(topLeft);
+    Point2D newTopRight = Transform(topRight);
+    Point2D newBottomRight = Transform(bottomRight);
+    Point2D newBottomLeft = Transform(bottomLeft);
+    
+    float min_left = std::min({newTopLeft.x, newTopRight.x, newBottomRight.x, newBottomLeft.x});
+    float max_right = std::max({newTopLeft.x, newTopRight.x, newBottomRight.x, newBottomLeft.x});
+    float min_top = std::min({newTopLeft.y, newTopRight.y, newBottomRight.y, newBottomLeft.y});
+    float max_bottom = std::max({newTopLeft.y, newTopRight.y, newBottomRight.y, newBottomLeft.y});
+
+    return Rect(min_left, min_top, max_right - min_left, max_bottom - min_top);
 
 }
 

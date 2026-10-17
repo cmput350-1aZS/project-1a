@@ -1,0 +1,268 @@
+CMPUT 350 - Project 1b: Galaga engine and game
+==============================================
+
+Team members: Zifan, Sarang
+
+
+1. OVERVIEW
+-----------
+This is a Galaga clone built on our own 2D game engine (C++20, SFML 3). The
+engine part is in engine/ (game objects, draw contexts, collision detection,
+notification manager, Bezier curves). The game part is in galaga/ (the Galaga
+manager, Player, Enemy, Bullet, Stars).
+
+Build (the project downloads SFML on the first configure):
+  cmake -B build
+  cmake --build build 
+
+Run build/Project1.exe with the build folder as the working directory.
+
+How to play:
+  - Press 5 to insert a coin, then 1 to start the game.
+  - A and D move the ship left and right. Space fires. At most two of your
+    bullets can be on the screen at the same time.
+  - Five rows of eight enemies fly in from above the screen and stop in
+    formation. Shoot all of them to clear the level.
+  - Touching an enemy costs one of your three lives. When the last life is
+    gone the game shows GAME OVER and then goes back to the coin prompt.
+
+Not play-tested end to end: when this file was written the project built and
+linked, but the full game loop had not been played through.
+
+
+2. WHAT IS IMPLEMENTED
+----------------------
+One entry per milestone: what exists, which files, how it works in a few lines.
+
+[M1] Improved draw contexts (rubric 4, 10 pts)
+  - Before this, Player drew its lines at real screen positions which is
+    around (384, 900). After M1, Player draws its lines around (0, 0).
+    Before drawing each object, the engine asks the object for its
+    location and rotation, stores them in the ScreenContext, then calls
+    RenderForeground.
+  - GraphicsObject got two new pure virtual functions, GetLocation and
+    GetRotation, so every drawable (Player, Bullet, Enemy, Stars, Ball)
+    must implement them.
+  - GameContext now has two draw contexts: ScreenContext for the gameplay
+    objects, which is moved and rotated per object, and GUIContext for the
+    GUI (score, text, etc) which is never transformed.
+
+[M2] Collision data side: Shape types, GetShapes, LineHitsRect                   
+  - Before M2, a collision object only had GetBounds, so the engine could only compare one bounding Rect per object. 
+  - M2 added Shape, which holds either a line, a rect, or a circle, and every collision object must now implement GetShapes
+    to say which shapes it is made of.
+  - M2 added a second CollisionEnter that also receives a collision point. Its default version just calls the one-argument version,
+    so objects that do not need the point keep working without any change.
+  - LineHitsRect treats a rect as 4 side lines, tests the line against each side with Line::Crosses, and keeps the crossing 
+    nearest the line's start. 
+
+[M3] Collision engine loop, hit point, rotations
+  - For each pair of objects, the engine first checks whether their bounding boxes overlap, and only then tests their shapes.                       
+  - It then converts every shape of both objects to screen coordinates with Transform, so shapes from different objects can be compared.
+  - Then it tests each pair of shapes: line vs rect with LineHitsRect, rect vs rect by overlap area, circle vs circle by comparing the
+    distance between the centers with the sum of the radii, circle vs rect with CircleHitsRect, and line vs line with Line::Crosses.
+    Only line vs rect gives a hit point. Line vs circle is not implemented.
+  - When a line hits a rect, the engine converts the hit point back to the local coordinates of the line's owner with ReverseTransform,
+    and only the owner gets the two-argument CollisionEnter. 
+
+
+[M4] Collision objects in the game, bullets end on the object                                 
+  - Before M4, a bullet was drawn as a line and the engine never told it where it hit.
+  - Bullet now has a line shape, a line from its tail to its head, so the engine can find the first
+    point where it meets an object. 
+  - The new two-argument CollisionEnter saves the collision point only if the hit killed the bullet. 
+  - Bullet also keeps a bool, mHasHit, because Kill() is also called when the bullet goes off the screen. When that happens
+    there is no collision, so the bullet must know whether a hit happened before it draws the circle.
+  - When one frame brings several hit points, the bullet keeps the one with the largest y-value, which is the lowest on the screen.
+  - When mHasHit is true, RenderForeground draws a circle at the hit point instead of the line.
+
+[M5] Bezier support 
+
+
+[M6] Notification manager and object iteration 
+
+
+[M7] Galaga game manager (rubric 5, 20 pts), by Zifan
+  - galaga/Galaga.h and Galaga.cpp. The program starts by adding one Galaga object (and the Stars) to the engine. Galaga
+    creates and removes every other object: the player, the enemies.
+  - Galaga is a state machine with five states: Waiting, Startup, Waves, GamePlay, GameOver. Section 4 lists what moves
+    the game from one state to the next.
+  - The GUI is drawn in RenderUI with the GUI draw context: the coin prompt (Waiting), LEVEL 1 (Startup), SCORE and LIVES
+    (every state except Waiting), and GAME OVER.
+  - Galaga learns about events through notifications. It registers for "InsertCoin" and "StartGame" (keys 5 and 1,
+    installed in Initialize), and for "EnemyDied" and "PlayerDied". Enemy::LateUpdate and Player::LateUpdate send those two
+    messages once, after the object was killed.
+  - Score is 100 points per enemy. The player has 3 lives. When the player dies, mPlayerSpawned is set to false and Update
+    adds a new Player at once, as long as lives are left.
+  - Waves: every 60 frames Galaga spawns one row of 8 enemies, 5 rows in total (40 enemies). mEnemiesAlive is raised when
+    an enemy is spawned and lowered on every "EnemyDied".
+  - Bezier entry: each Enemy is built with its formation spot and a 4-point route. The route starts above the screen,
+    bends through two points at y = 400, and ends at the formation spot. Enemy::Update moves it along the curve by 0.01 in
+    t every frame (100 frames in total), moves its collision box with it, and then places it exactly on the spot.
+  - Clean-up: when GameOver ends, Galaga resets the score, lives, counters and mEnemiesAlive, and loops over the engine's
+    objects to Kill every Enemy still alive. When all enemies die in GamePlay the state goes back to Startup and the next
+    level of 40 enemies starts.
+  - Player now dies when it touches an Enemy (Player::CollisionEnter).
+  - Fixes in the engine found while building Galaga: GameEngine::Run now calls RenderUI on every object, and sets
+    context.CurrObject before it calls Initialize.
+
+
+
+3. DESIGN DECISIONS AND API CHANGES
+-----------------------------------
+
+[M1] Improved draw contexts
+  - Objects draw around (0, 0) and the engine supplies the position because
+  rotation always spins a drawing around the point (0, 0). Drawn around (0, 0),
+  an object spins around its own center, then the engine's offset moves it to
+  its screen position.
+
+[M2] Collision data side: Shape types, GetShapes, LineHitsRect
+  - The second CollisionEnter has a default body that calls the one-argument version, so objects that do not 
+    need the collision point keep working without any change.
+
+[M3] Collision engine loop 
+  - The engine converts the hit point back to the line owner's local coordinates because the object does not know where 
+    it is on the screen, it only works around its own (0, 0).
+
+[M4] Collision objects in the game
+  - The Bullet keeps the hit point with the largest y, not the engine because the engine only sees a CollisionObject
+    and does not know what that object wants to do with the point. 
+  - RenderForeground checks mHasHit and not IsAlive() because the bullet could go off the screen, and then it is not alive but has 
+    no point to draw a circle at.  
+
+
+[M7] Galaga game manager
+  - Galaga creates, counts and removes the enemies and the player, not main(). Only the manager knows when a game or a
+    level starts and ends, so it is the one place that can reset everything.
+  - Enemies and the player never call Galaga. They send "EnemyDied" and "PlayerDied" through the notification manager,
+    so they do not depend on the Galaga class and Galaga does not need pointers to them.
+  - The death message is sent from LateUpdate, not from Kill() or CollisionEnter. LateUpdate runs after the collision
+    step, and the engine removes dead objects at the start of the next frame, so each death is announced exactly once.
+  - Galaga counts "EnemyDied" only in Waves and GamePlay. The enemies that Galaga kills during the game-over clean-up also
+    announce their death, and counting those would add points to the next game.
+  - Every state keeps its own frame counter (mStartupFrames, mWaveFrames, mGameOverFrames) because
+    context.currentFrame is set to 0 on every frame in GameEngine::Run and never counts up. Each counter is reset when its
+    state ends, so the next pass starts at zero. All timings are in frames; the engine limits the game to 30 frames per
+    second, so 120 frames of Startup is 4 seconds, 60 frames between waves is 2 seconds, and 180 frames of GameOver is 6
+    seconds.
+  - An Enemy gets its formation spot and its route from Galaga instead of working them out itself, so Galaga controls
+    where each enemy ends up and the Enemy class only follows the route it was given.
+  - The collision box of an Enemy is rebuilt every frame while it moves, because the engine compares the bounding boxes
+    in screen coordinates (Enemy::GetBounds), while the drawn shape stays around (0, 0).
+
+
+4. GALAGA STATE FLOW
+--------------------
+Galaga::Update runs the state machine once per frame. The states and what moves the game from one to the next:
+
+  Waiting  -> Startup   Key 5 adds a credit ("InsertCoin"). Key 1 ("StartGame") starts a game, but only in Waiting and
+                        only if at least one credit was inserted. The screen shows PRESS 5 TO INSERT COIN.
+  Startup  -> Waves     The player ship appears, and LEVEL 1 and the score are shown. After 120 frames the state changes.
+  Waves    -> GamePlay  Every 60 frames one row of 8 enemies is spawned. After the fifth row (40 enemies) the state changes.
+  GamePlay -> Startup   The game runs until mEnemiesAlive is 0, then it starts the next level.
+  any state -> GameOver When mLives reaches 0 (every "PlayerDied" costs one life, starting from 3).
+  GameOver -> Waiting   GAME OVER is shown for 180 frames. Then the score (0), lives (3) and counters are reset, and any
+                        enemy still alive is killed.
+
+While the state is not Waiting or GameOver, Update adds a new Player whenever there is none (mPlayerSpawned is false), so
+the ship comes back at once after a death.
+
+
+5. TEAM CONTRIBUTIONS
+---------------------
+Zifan:
+  - M1 improved draw contexts (offsets and rotations, GUI and screen contexts).
+  - M2, M3 collision data side and collision engine loop: Shapes, GetShapes, hit points, rotations.
+  - M4 Bullet and the other game objects use the new collision API; bullets end on the object they hit.
+  - M7 Galaga game manager: states, GUI, score and lives, waves, Bezier entry of the enemies, clean-up.
+
+
+Sarang:
+  - M5 Bezier curves.
+  - M6 NotificationManager, EngineView 
+
+6. EXTRA CREDIT
+---------------
+None.
+
+
+7. AI USAGE
+-----------
+
+ZIFAN
+=====
+
+M2[Collision data side: Shape types, GetShapes, LineHitsRect]
+
+  Code I wrote with AI help
+    The AI gave hints, explanations and worked examples. I typed all of this
+    code.
+
+    engine/CollisionObject.h
+      ShapeType, ShapeUnion, Shape, the second CollisionEnter with a default
+      body, and the pure virtual GetShapes. 
+
+    galaga/Bullet.cpp:186, galaga/Player.cpp:185, galaga/Enemy.cpp:124,
+    galaga/main.cpp:84
+      GetShapes in Bullet (one line), Player (one rect), Enemy (one rect)
+      and Ball (one circle).
+
+    engine/GameEngine.cpp:26
+      LineHitsRect. The AI suggested making it a static helper in
+      GameEngine.cpp and suggested the one-rect shape for Player.
+
+  Reflection
+    - LineHitsRect first compiled in the M3 session, with no errors.
+    - Type definitions shown before the place they plug in left me confused
+      for about 25 turns. A concrete example with numbers (bullet at
+      (100, 200), enemy at (100, 195)) is what worked.
+    - Mistakes I made and fixed: missing return type on GetShapes, vector
+      and Shape in the wrong namespace, distance typed as Point2D.
+
+
+M3[Collision engine loop, hit point, rotations]
+
+  Code I wrote with AI help
+    The AI gave hints, explanations and worked examples. I typed all of this
+    code.
+
+    engine/GameEngine.cpp:290-330
+      Converting both objects' shapes to screen space (line, rect, circle).
+    engine/GameEngine.cpp:63 and 336-385
+      CircleHitsRect and the pair tests: line vs rect, rect vs rect,
+      circle vs circle, circle vs rect, line vs line.
+    engine/GameEngine.cpp:333-407
+      lineIsA, re-pinning the context at the line's owner, ReverseTransform
+      of the hit point, and who gets which CollisionEnter. The AI suggested
+      the lineIsA flag, the re-pin, and keeping this loop inline in Run()
+      because only GameEngine is a friend of DrawContext. For the circle
+      branches, the AI pointed me at the rect branches as the pattern.
+    engine/DrawContext.cpp:197-227
+      Transform and ReverseTransform for a point.
+
+M4[Collision objects in the game, bullets end on the object]
+
+  Code I wrote with AI help
+    The AI gave hints, explanations and worked examples. I typed all of this
+    code.
+
+    galaga/Bullet.h:32 and Bullet.h:43-44
+      The two-argument CollisionEnter override, mHitPoint and mHasHit.
+    galaga/Bullet.cpp:144-155
+      Forward to the one-argument version, save the point only if the bullet
+      died, and keep the point with the largest y. The AI showed me my own
+      LineHitsRect pattern (!found || d < bestDistance) and said to copy
+      its shape.
+
+  Reflection
+    - Several hit points in one frame (the largest-y rule) was not seen on
+      screen.
+    - Known limit: if a bullet kills an Enemy and touches another object in
+      the same frame, that second point is also compared.
+
+
+
+SARANG
+======
+TODO: 
