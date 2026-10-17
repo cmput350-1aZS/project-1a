@@ -2,6 +2,8 @@
 
 #include "Enemy.h"
 
+#include <memory>
+
 /**
  * @brief Constructs a bullet at a starting position that moves by a fixed step each frame
  *
@@ -9,10 +11,12 @@
  * @param heading Distance the bullet moves per frame (x and y); a negative y moves it up
  * @param player True if the player fired this bullet, false if an enemy did
  */
-Bullet::Bullet(CMPUT350::Point2D location, CMPUT350::Point2D heading, bool player) {
+Bullet::Bullet(CMPUT350::Point2D location, CMPUT350::Point2D heading, bool player,
+               std::weak_ptr<CMPUT350::GameObject> parent) {
     mLocation = location;
     mHeading = heading;
     mPlayerBullet = player;
+    mParent = parent;
     mBulletAlive = true;
     // The bullet has not moved yet, so its previous and current positions are the same
     // and the collision box starts out with zero size
@@ -44,6 +48,13 @@ void Bullet::Initialize(CMPUT350::GameContext* context) {
  * @param context Unused
  */
 void Bullet::Update(CMPUT350::GameContext* context) {
+    // A bullet is removed if the object that fired it is no longer alive
+    std::shared_ptr<CMPUT350::GameObject> parent = mParent.lock();
+    if (parent == nullptr || !parent->IsAlive()) {
+        Kill();
+        return;
+    }
+
     // Remember where the bullet was before it moves
     CMPUT350::Point2D old = mLocation;
     mLocation += mHeading;
@@ -92,8 +103,9 @@ void Bullet::RenderBackground(CMPUT350::GameContext* context) {
 void Bullet::RenderForeground(CMPUT350::GameContext* context) {
     // AI-assisted: this DrawLine call was provided by Claude when asked how to draw the bullet as a
     // line
+    CMPUT350::RGBColor color = mPlayerBullet ? CMPUT350::Colors::blue : CMPUT350::Colors::red;
     context->ScreenContext->DrawLine(CMPUT350::Point2D(0, 0), CMPUT350::Point2D(0, 0) - mHeading, 2,
-                                     CMPUT350::Colors::blue);
+                                     color);
 }
 
 /**
@@ -118,7 +130,7 @@ void Bullet::CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& ob
     // dynamic_pointer_cast returns nullptr unless obj really is an Enemy
     std::shared_ptr<Enemy> enemy = std::dynamic_pointer_cast<Enemy>(obj);
 
-    if (enemy != nullptr) {
+    if (enemy != nullptr && mPlayerBullet) {
         Kill();
     }
 }
@@ -146,4 +158,3 @@ bool Bullet::IsAlive() const {
  * @return The box covering the bullet's previous and current position
  */
 const CMPUT350::Rect& Bullet::GetBounds() { return mBounds; }
-

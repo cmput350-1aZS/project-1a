@@ -1,12 +1,33 @@
 #ifndef ENEMY_H
 #define ENEMY_H
 
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "CollisionObject.h"
+#include "GameContext.h"
+#include "Bezier.h"
 #include "CollisionObject.h"
 #include "GameContext.h"
 
 class Enemy : public CMPUT350::CollisionObject {
 public:
-    Enemy(CMPUT350::Point2D loc);
+    Enemy(
+        CMPUT350::Point2D formationLocation,
+        const std::vector<CMPUT350::Point2D>& entryPath,
+        int health,
+        int score,
+        float movementSpeed,
+        int attackCooldown,
+        float bulletSpeed,
+        float attackArcX,
+        float attackArcY,
+        float hoverPhase,
+        const std::string& enemyType
+    );
+
+    ~Enemy() override = default;
 
     // GameObject Functions
     void Initialize(CMPUT350::GameContext* context) override;
@@ -27,11 +48,118 @@ public:
     CMPUT350::Point2D GetLocation() const override;
     float GetRotation() const override; 
 
+    // returns true when this enemy starts attack
+    virtual bool Attack(
+        CMPUT350::GameContext* context,
+        const CMPUT350::Point2D& target
+    ) = 0;
+
 private:
-    CMPUT350::Point2D mEnemyLocation;  // Center of the enemy, in screen pixels
-    bool mEnemyAlive;  // False once Kill has been called; the engine then removes the enemy
-    CMPUT350::Rect
-        mEnemyBounds;  // Fixed box centered on mEnemyLocation, used for drawing and collisions
+    void SetPath(const std::vector<CMPUT350::Point2D>& controlPoints);
+    void AdvancePath();
+    bool AllEnemiesHaveEnteredFormation(
+        CMPUT350::GameContext* context
+    ) const;
+
+    CMPUT350::Point2D mLocation;
+    CMPUT350::Point2D mFormationLocation;
+    CMPUT350::Rect mEnemyBounds;
+
+    std::vector<CMPUT350::Point2D> mPathControlPoints;
+    std::vector<CMPUT350::Point2D> mPathSamples;
+    std::vector<float> mPathDistances;
+
+    float mPathDistance = 0.0f;
+    float mPathLength = 0.0f;
+
+    float mMovementSpeed;
+    float mBulletSpeed;
+    float mAttackArcX;
+    float mAttackArcY;
+    float mHoverPhase;
+
+    int mHealth;
+    int mScore;
+    int mAttackCooldown;
+    int mNextAttackFrame = 0;
+
+    bool mAlive = true;
+    bool mPathActive = false;
+    bool mHasEnteredFormation = false;
+    bool mInFormation = false;
+
+    std::string mEnemyType;
+
+    CMPUT350::NotificationManager* mNotificationManager = nullptr;
+
+protected:
+    bool BeginAttack(
+        CMPUT350::GameContext* context,
+        const CMPUT350::Point2D& target
+    );
+
+    void FireAt(
+        CMPUT350::GameContext* context,
+        const CMPUT350::Point2D& target
+    );
+
+    void DrawEnemy(
+        CMPUT350::GameContext* context,
+        float halfWidth,
+        float halfHeight
+    );
+
+    bool IsInFormation() const;
+
+    float mSize = 8.0f;
+};
+
+// type 1: fast, one health, relatively frequent attacks
+class ScoutEnemy : public Enemy {
+public:
+    ScoutEnemy(
+        CMPUT350::Point2D formationLocation,
+        const std::vector<CMPUT350::Point2D>& entryPath
+    );
+
+    bool Attack(
+        CMPUT350::GameContext* context,
+        const CMPUT350::Point2D& target
+    ) override;
+
+    void RenderForeground(CMPUT350::GameContext* context) override;
+};
+
+// type 2: med speed, one health, different attack
+class FighterEnemy : public Enemy {
+public:
+    FighterEnemy(
+        CMPUT350::Point2D formationLocation,
+        const std::vector<CMPUT350::Point2D>& entryPath
+    );
+
+    bool Attack(
+        CMPUT350::GameContext* context,
+        const CMPUT350::Point2D& target
+    ) override;
+
+    void RenderForeground(CMPUT350::GameContext* context) override;
+};
+
+// type 3: slow, two health
+class TankEnemy : public Enemy {
+public:
+    TankEnemy(
+        CMPUT350::Point2D formationLocation,
+        const std::vector<CMPUT350::Point2D>& entryPath
+    );
+
+    bool Attack(
+        CMPUT350::GameContext* context,
+        const CMPUT350::Point2D& target
+    ) override;
+
+    void RenderForeground(CMPUT350::GameContext* context) override;
 };
 
 #endif

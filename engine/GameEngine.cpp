@@ -135,7 +135,7 @@ void GameEngine::Run() {
         GameContext context;
         context.mEngineView = this; // pointer to current GameEngine obj
         context.mNotificationManager = &mNotificationManager;
-        context.currentFrame = 0;
+        context.currentFrame = mCurrentFrame;
         DrawContext screenContext(mWindow, mFont);
         context.ScreenContext = &screenContext;
 
@@ -157,7 +157,7 @@ void GameEngine::Run() {
         // 1. Activate and initialize any objects added during the last frame
         for (auto gameObject : mAddedGameObjects) { // goes through every object in mAddedGameObjects
             mGameObjects.push_back(gameObject); // adds obj to end of mGameObjects vector
-
+            context.CurrObject = gameObject;
             gameObject->Initialize(&context);
         }
         mAddedGameObjects.clear();
@@ -192,6 +192,7 @@ void GameEngine::Run() {
         // 3. Update game objects
         // Each active object gets one opportunity to update its state for this frame.
         for (auto gameObject : mGameObjects) {
+            context.CurrObject = gameObject;
             gameObject->Update(&context); // updates every active game object's function
         }
 
@@ -271,6 +272,7 @@ void GameEngine::Run() {
 
         // Actually render to window
         mWindow->display();
+        ++mCurrentFrame;
     }
 }
 

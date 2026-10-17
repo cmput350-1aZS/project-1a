@@ -124,14 +124,38 @@ int main() {
                                                // machine would display in 768 x 865
         engine.AddGameObject(player);
         engine.AddGameObject(std::make_shared<Stars>(250, CMPUT350::Rect(0, 0, 768, 1024)));
+        // for (int x = 0; x < 40; x++)  // changed to 40 enemies from 4
+        // {
+        //     // auto enemy = std::make_shared<Enemy>(CMPUT350::Point2D(100 + x * 200, 100)); is
+        //     // placing 4 enemies
+        //     auto enemy = std::make_shared<Enemy>(CMPUT350::Point2D(
+        //         20 + x * (728.0f / 39.0f),
+        //         100));  // 20 pixels on each side of screen and remaining 748-20 = 728 left to
+        //                 // distribute 40 enemies (39 gaps between them)
+        //     engine.AddGameObject(enemy);
+        // }
         for (int x = 0; x < 40; x++)  // changed to 40 enemies from 4
         {
-            // auto enemy = std::make_shared<Enemy>(CMPUT350::Point2D(100 + x * 200, 100)); is
-            // placing 4 enemies
-            auto enemy = std::make_shared<Enemy>(CMPUT350::Point2D(
+            CMPUT350::Point2D formationLocation(
                 20 + x * (728.0f / 39.0f),
-                100));  // 20 pixels on each side of screen and remaining 748-20 = 728 left to
-                        // distribute 40 enemies (39 gaps between them)
+                100);
+
+            // Temporary entry path: enemies start at their formation locations.
+            std::vector<CMPUT350::Point2D> entryPath = {
+                formationLocation,
+                formationLocation
+            };
+
+            std::shared_ptr<Enemy> enemy;
+
+            if (x % 3 == 0) {
+                enemy = std::make_shared<ScoutEnemy>(formationLocation, entryPath);
+            } else if (x % 3 == 1) {
+                enemy = std::make_shared<FighterEnemy>(formationLocation, entryPath);
+            } else {
+                enemy = std::make_shared<TankEnemy>(formationLocation, entryPath);
+            }
+
             engine.AddGameObject(enemy);
         }
         engine.Run();
