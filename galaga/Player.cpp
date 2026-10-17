@@ -78,43 +78,6 @@ void Player::LateUpdate(CMPUT350::GameContext* context) {
 }
 
 /**
- * @brief Handles keyboard input for the player.
- *
- * The space key creates a player bullet when fewer than two bullets are
- * currently being tracked. The A and D keys move the player horizontally.
- *
- * @param context The game context containing access to the engine.
- * @param key The keyboard character received from the event.
- *
- * @return true if the player handled the key, otherwise false.
- */
-// bool Player::HandleKeyEvent(CMPUT350::GameContext* context, char key)
-// {
-//     if (key == ' ') {
-//         if (mBullets.size() < 2){ // only if there are less than 2 bullets on screen
-//             // Create a bullet and give ownership to the engine with
-//             // Bullet(loc, movement, player bullet true (not enemy bullet)).
-//             auto bullet = std::make_shared<Bullet>(CMPUT350::Point2D(mLoc.x, mLoc.y -20),
-//             CMPUT350::Point2D(0,-10), true); context->mEngineView->AddGameObject(bullet); //
-//             allows game engine to handle bullet mBullets.push_back(bullet); // creates weak ptr
-//             that observes this bulletby player's mBullet vector (made of weak ptrs) return true;
-//         }
-//     }
-
-//     if (key == 'a' || key == 'A' ){ // left
-//         mLoc.x -=10;
-//         return true;
-//     }
-
-//     if (key == 'd' || key == 'D' ) { // right
-//         mLoc.x +=10;
-//         return true;
-//     }
-
-//     return false;
-// }
-
-/**
  * @brief Renders the player's background graphics.
  *
  * @param context The game context containing access to the screen.
@@ -154,7 +117,8 @@ void Player::RenderForeground(CMPUT350::GameContext* context) {
 /**
  * @brief Handles a collision with another collision object.
  *
- * The player is killed when it touches an Enemy and ignores everything else.
+ * The player is killed when it touches an Enemy or an enemy bullet. Its own bullets and
+ * everything else are ignored.
  *
  * @param obj The collision object that collided with the player.
  */
@@ -183,7 +147,6 @@ void Player::Kill() { mAlive = false; }
  * @return true if the player is alive, otherwise false.
  */
 bool Player::IsAlive() const {
-    // TODO: Update code
     return mAlive;
 }
 
@@ -196,7 +159,6 @@ bool Player::IsAlive() const {
  * @return A reference to the player's collision bounding rectangle.
  */
 const CMPUT350::Rect& Player::GetBounds() {
-    // TODO: Update code
     static CMPUT350::Rect sBounds(0, 0, 0, 0);
 
     // this is player's collision bounds
