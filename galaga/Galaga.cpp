@@ -96,6 +96,7 @@ void Galaga::ReceiveNotification(const std::string& key) {
         mCredits += 1;
     } else if (key == "StartGame" && mState == State::Waiting && mCredits > 0) {
         mState = State::Startup;
+        mCredits -= 1;
     } else if (key == "EnemyDestroyed_FormationBonus_50" &&
                (mState == State::Waves || mState == State::GamePlay)) {
         mScore += 50;
