@@ -23,8 +23,10 @@ How to play:
     bullets can be on the screen at the same time.
   - Five rows of eight enemies fly in from above the screen and stop in
     formation. Shoot all of them to clear the level.
-  - Touching an enemy costs one of your three lives. When the last life is
-    gone the game shows GAME OVER and then goes back to the coin prompt.
+  - Three enemy types (Scout, Fighter, Tank) dive at the ship and shoot at it.
+  - Touching an enemy or being hit by an enemy bullet costs one of your three
+    lives. When the last life is gone the game shows GAME OVER and then goes
+    back to the coin prompt. Each game uses one credit.
 
 Not play-tested end to end: when this file was written the project built and
 linked, but the full game loop had not been played through.
@@ -46,8 +48,11 @@ One entry per milestone: what exists, which files, how it works in a few lines.
   - GameContext now has two draw contexts: ScreenContext for the gameplay
     objects, which is moved and rotated per object, and GUIContext for the
     GUI (score, text, etc) which is never transformed.
+  - DrawRect and FrameRect also rotate the rectangle with the object's
+    rotation (setRotation on the SFML shape). Before this fix only the
+    top-left corner moved, so a rotated enemy drew as a flat box beside it.
 
-[M2] Collision data side: Shape types, GetShapes, LineHitsRect                   
+[M2] Collision data side: Shape types, GetShapes, LineHitsRect
   - Before M2, a collision object only had GetBounds, so the engine could only compare one bounding Rect per object. 
   - M2 added Shape, which holds either a line, a rect, or a circle, and every collision object must now implement GetShapes
     to say which shapes it is made of.
@@ -95,22 +100,38 @@ One entry per milestone: what exists, which files, how it works in a few lines.
     creates and removes every other object: the player, the enemies.
   - Galaga is a state machine with five states: Waiting, Startup, Waves, GamePlay, GameOver. Section 4 lists what moves
     the game from one state to the next.
-  - The GUI is drawn in RenderUI with the GUI draw context: the coin prompt (Waiting), LEVEL 1 (Startup), SCORE and LIVES
-    (every state except Waiting), and GAME OVER.
+  - The GUI is drawn in RenderUI with the GUI draw context: the coin prompt (Waiting), LEVEL n (Startup), SCORE and LIVES
+    (every state except Waiting), LIVES LEFT n for 90 frames after the ship comes back, and GAME OVER.
   - Galaga learns about events through notifications. It registers for "InsertCoin" and "StartGame" (keys 5 and 1,
-    installed in Initialize), and for "EnemyDied" and "PlayerDied". Enemy::LateUpdate and Player::LateUpdate send those two
-    messages once, after the object was killed.
-  - Score is 100 points per enemy. The player has 3 lives. When the player dies, mPlayerSpawned is set to false and Update
-    adds a new Player at once, as long as lives are left.
-  - Waves: every 60 frames Galaga spawns one row of 8 enemies, 5 rows in total (40 enemies). mEnemiesAlive is raised when
-    an enemy is spawned and lowered on every "EnemyDied".
+    installed in Initialize), for the enemy messages "EnemyDestroyed_Scout_100", "EnemyDestroyed_Fighter_200",
+    "EnemyDestroyed_Tank_300" and "EnemyDestroyed_FormationBonus_50" (sent by Enemy::Kill), and for "PlayerDied" (sent once
+    by Player::LateUpdate after the player was killed).
+  - Credits: key 5 adds one credit, and starting a game with key 1 uses one.
+  - Score: Galaga adds the number after the last underscore of an "EnemyDestroyed_" message (100, 200 or 300 by enemy
+    type), and 50 more for an enemy killed while it is out of formation. The player has 3 lives.
+  - Respawn: when the player dies, mPlayerSpawned is set to false. Update adds a new Player only when lives are left and
+    every enemy is back in formation (Enemy::IsInFormation), then shows LIVES LEFT n.
+  - Waves: every 60 frames Galaga spawns one row of 8 enemies, 5 rows in total (40 enemies). The type goes Scout, Fighter,
+    Tank across the row (i % 3). mEnemiesAlive is raised when an enemy is spawned and lowered on every
+    "EnemyDestroyed_<type>_<score>" message (not on the bonus message).
   - Bezier entry: each Enemy is built with its formation spot and a 4-point route. The route starts above the screen,
-    bends through two points at y = 400, and ends at the formation spot. Enemy::Update moves it along the curve by 0.01 in
-    t every frame (100 frames in total), moves its collision box with it, and then places it exactly on the spot.
-  - Clean-up: when GameOver ends, Galaga resets the score, lives, counters and mEnemiesAlive, and loops over the engine's
-    objects to Kill every Enemy still alive. When all enemies die in GamePlay the state goes back to Startup and the next
-    level of 40 enemies starts.
-  - Player now dies when it touches an Enemy (Player::CollisionEnter).
+    bends through two points at y = 400, and ends at the formation spot. The Enemy follows the curve at a constant speed
+    (Sarang's Enemy code, see M5) and then sits on its spot.
+  - Levels: when all enemies die in GamePlay, mLevel goes up by one and the state goes back to Startup, which shows the new
+    level and starts the next 40 enemies.
+  - Clean-up: when GameOver ends, Galaga resets the score, lives, level, counters and mEnemiesAlive, and loops over the
+    engine's objects to Kill every Enemy still alive.
+  - Player controls go through notifications: Galaga::Initialize installs A, D and Space as "MoveLeft", "MoveRight" and
+    "Fire", and Player registers for those three messages. Moving clamps the ship to the screen. "Fire" only sets a flag;
+    Player::Update then makes the bullet, at most two at a time.
+  - Collisions in the game: the player dies when it touches an Enemy or an enemy bullet (Player::CollisionEnter). A player
+    bullet dies on an Enemy and an enemy bullet dies on the Player (Bullet::CollisionEnter). Each bullet ignores the side
+    that fired it.
+  - Every Bullet keeps a weak pointer to the object that fired it and dies when that object is gone, or when it leaves
+    the screen.
+  - Not done: the spec says Galaga selects several enemies deterministically during waves and tells them to attack. Here
+    each Enemy starts its own attacks on a cooldown once all enemies are in formation (Enemy::Update); Galaga never calls
+    Attack.
   - Fixes in the engine found while building Galaga: GameEngine::Run now calls RenderUI on every object, and sets
     context.CurrObject before it calls Initialize.
 
@@ -124,6 +145,8 @@ One entry per milestone: what exists, which files, how it works in a few lines.
   rotation always spins a drawing around the point (0, 0). Drawn around (0, 0),
   an object spins around its own center, then the engine's offset moves it to
   its screen position.
+  - DrawRect rotates the SFML rectangle around its own top-left corner. Transform already puts that corner in the right
+    place on screen, so rotating the shape by the same angle puts the other three corners in the right place too.
 
 [M2] Collision data side: Shape types, GetShapes, LineHitsRect
   - The second CollisionEnter has a default body that calls the one-argument version, so objects that do not 
@@ -152,17 +175,26 @@ One entry per milestone: what exists, which files, how it works in a few lines.
 [M7] Galaga game manager
   - Galaga creates, counts and removes the enemies and the player, not main(). Only the manager knows when a game or a
     level starts and ends, so it is the one place that can reset everything.
-  - Enemies and the player never call Galaga. They send "EnemyDied" and "PlayerDied" through the notification manager,
-    so they do not depend on the Galaga class and Galaga does not need pointers to them.
-  - The death message is sent from LateUpdate, not from Kill() or CollisionEnter. LateUpdate runs after the collision
-    step, and the engine removes dead objects at the start of the next frame, so each death is announced exactly once.
-  - Galaga counts "EnemyDied" only in Waves and GamePlay. The enemies that Galaga kills during the game-over clean-up also
-    announce their death, and counting those would add points to the next game.
-  - Every state keeps its own frame counter (mStartupFrames, mWaveFrames, mGameOverFrames) because
-    context.currentFrame is set to 0 on every frame in GameEngine::Run and never counts up. Each counter is reset when its
-    state ends, so the next pass starts at zero. All timings are in frames; the engine limits the game to 30 frames per
-    second, so 120 frames of Startup is 4 seconds, 60 frames between waves is 2 seconds, and 180 frames of GameOver is 6
-    seconds.
+  - Enemies and the player never call Galaga. They send "EnemyDestroyed_..." and "PlayerDied" through the notification
+    manager, so they do not depend on the Galaga class and Galaga does not need pointers to them.
+  - The player's death message is sent from LateUpdate, not from Kill() or CollisionEnter. LateUpdate runs after the
+    collision step, and the engine removes dead objects at the start of the next frame, so the death is announced exactly
+    once. Enemy::Kill (Sarang's code) sends its message itself and returns early if the enemy is already dead, so it is
+    also sent once.
+  - Galaga reads the score from the message text ("EnemyDestroyed_Tank_300") because the enemy messages already carry it.
+    The notification manager matches exact strings, so Galaga registers each of the four enemy messages by name.
+  - Galaga counts the enemy messages only in Waves and GamePlay. The enemies that Galaga kills during the game-over
+    clean-up also announce their death, and counting those would add points to the next game.
+  - The player's keys are installed in Galaga::Initialize, not in Player. A new Player is made at every respawn, and if
+    each one installed the keys again, one key press would move the ship two, three or more times.
+  - "Fire" only sets a flag and Player::Update makes the bullet, because ReceiveNotification gets no GameContext and so
+    cannot add an object to the engine.
+  - The respawn waits until every enemy is back in formation because the spec says to wait until all ships return home.
+  - Every state keeps its own frame counter (mStartupFrames, mWaveFrames, mGameOverFrames, mRespawnFrames). When these
+    were written, context.currentFrame was always 0; the engine now counts frames (Sarang's change), but the counters stay
+    because each one restarts at zero when its state ends. All timings are in frames; the engine limits the game to 30
+    frames per second, so 120 frames of Startup is 4 seconds, 60 frames between waves is 2 seconds, 90 frames of LIVES LEFT
+    is 3 seconds, and 180 frames of GameOver is 6 seconds.
   - An Enemy gets its formation spot and its route from Galaga instead of working them out itself, so Galaga controls
     where each enemy ends up and the Enemy class only follows the route it was given.
   - The collision box of an Enemy is rebuilt every frame while it moves, because the engine compares the bounding boxes
@@ -174,16 +206,16 @@ One entry per milestone: what exists, which files, how it works in a few lines.
 Galaga::Update runs the state machine once per frame. The states and what moves the game from one to the next:
 
   Waiting  -> Startup   Key 5 adds a credit ("InsertCoin"). Key 1 ("StartGame") starts a game, but only in Waiting and
-                        only if at least one credit was inserted. The screen shows PRESS 5 TO INSERT COIN.
-  Startup  -> Waves     The player ship appears, and LEVEL 1 and the score are shown. After 120 frames the state changes.
+                        only if a credit is left; starting uses one credit. The screen shows PRESS 5 TO INSERT COIN.
+  Startup  -> Waves     The player ship appears, and LEVEL n and the score are shown. After 120 frames the state changes.
   Waves    -> GamePlay  Every 60 frames one row of 8 enemies is spawned. After the fifth row (40 enemies) the state changes.
-  GamePlay -> Startup   The game runs until mEnemiesAlive is 0, then it starts the next level.
+  GamePlay -> Startup   The game runs until mEnemiesAlive is 0, then the level goes up by one and the next level starts.
   any state -> GameOver When mLives reaches 0 (every "PlayerDied" costs one life, starting from 3).
   GameOver -> Waiting   GAME OVER is shown for 180 frames. Then the score (0), lives (3) and counters are reset, and any
                         enemy still alive is killed.
 
-While the state is not Waiting or GameOver, Update adds a new Player whenever there is none (mPlayerSpawned is false), so
-the ship comes back at once after a death.
+While the state is not Waiting or GameOver, Update adds a new Player whenever there is none (mPlayerSpawned is false)
+and every enemy is back in formation. After a death, LIVES LEFT n is shown for 90 frames once the ship is back.
 
 
 5. TEAM CONTRIBUTIONS
@@ -192,7 +224,12 @@ Zifan:
   - M1 improved draw contexts (offsets and rotations, GUI and screen contexts).
   - M2, M3 collision data side and collision engine loop: Shapes, GetShapes, hit points, rotations.
   - M4 Bullet and the other game objects use the new collision API; bullets end on the object they hit.
-  - M7 Galaga game manager: states, GUI, score and lives, waves, Bezier entry of the enemies, clean-up.
+  - M7 Galaga game manager: states, GUI, score and lives, waves, Bezier entry of the enemies, clean-up, level counter,
+    LIVES LEFT message, respawn that waits for the enemies, credits, scoring by enemy type.
+  - Player controls through notifications, bullet parent (weak pointer), enemy bullets that kill the player.
+  - Rotation for DrawRect and FrameRect, removal of the old commented-out HandleKeyEvent code.
+  - Merged Sarang's enemy types into the Galaga manager.
+  - Extra credit: Vector2D (section 6).
 
 
 Sarang:
@@ -203,7 +240,17 @@ Sarang:
 
 6. EXTRA CREDIT
 ---------------
-None.
+[Vector2D alias] (5 pts), by Zifan
+  - engine/MathUtil.h: using Vector2D = Point2D; right after the Point2D struct. It is the same type under a second
+    name, so nothing changes when the program runs. Vector2D marks a value that is a direction or a step ("how far, which
+    way"), and Point2D stays for a position ("where").
+  - Bullet is now built from a point and a direction vector, the spec's example: Bullet(Point2D location,
+    Vector2D heading, ...), and mHeading is a Vector2D. Player passes Vector2D(0, -10) as the bullet's step.
+  - DrawContext::DrawLine: direction, perpendicular and offset are Vector2D.
+  - MathUtil.h Line: the direction vectors in ClosestPoint (direction, toPoint) and Crosses (thisDirection,
+    otherDirection, diff) are Vector2D.
+  - Bezier: GetSlope and CalculateSlope return Vector2D, because the slope of the curve is a direction, not a point.
+  - Positions stay Point2D: locations, control points, hit points, crossing points, ClosestPoint's result.
 
 
 7. AI USAGE
@@ -279,6 +326,40 @@ M4[Collision objects in the game, bullets end on the object]
       screen.
     - Known limit: if a bullet kills an Enemy and touches another object in
       the same frame, that second point is also compared.
+
+
+M7[Galaga game manager, final fixes and extra credit]
+  Code I wrote with AI help
+    The AI gave hints and explanations. I typed all of this code.
+
+    galaga/Galaga.cpp
+      Level counter, LIVES LEFT timer, the respawn that waits for every
+      enemy to be in formation, installing the player's keys, credits being
+      used on start, picking the enemy type with i % 3.
+    galaga/Player.cpp
+      Initialize (registering for MoveLeft, MoveRight, Fire),
+      ReceiveNotification, making the bullet in Update, and the enemy
+      bullet check in CollisionEnter.
+    galaga/Bullet.cpp
+      The parent weak pointer, dying off the bottom of the screen, and the
+      enemy bullet hitting the Player in CollisionEnter.
+    engine/DrawContext.cpp:88, 104
+      setRotation in DrawRect and FrameRect.
+    engine/MathUtil.h:90, galaga/Bullet.h:13, 41, galaga/Bullet.cpp:16,
+    engine/DrawContext.cpp:144-147
+      The Vector2D alias and the first renames.
+
+  Reflection
+    - The game has not been played through end to end since these changes;
+      everything above builds and links.
+    - Not done: line vs circle collision, and Galaga choosing the attackers.
+    - The "OpenAI Implementation ends here" marker for the OpenAI-helped
+      bounding-box test in engine/GameEngine.cpp was lost when our branches
+      were merged. That help covers GameEngine.cpp:264-275.
+    - Mistakes I made and fixed: putting a variable name (mBullets) where a
+      type was needed in dynamic_pointer_cast, adding an include to the
+      wrong file, flipping the existing enemy check instead of adding a
+      second if, calling IsPlayerBullet without ().
 
 
 
