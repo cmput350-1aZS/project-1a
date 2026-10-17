@@ -86,6 +86,9 @@ struct Point2D {
     }
 };
 
+// Same type as Point2D, used where the value is a direction or step rather than a position
+using Vector2D = Point2D;
+
 // Prints a point as (x, y)
 static std::ostream& operator<<(std::ostream& os, const Point2D& p) {
     os << "(" << p.x << ", " << p.y << ")";
@@ -114,9 +117,9 @@ struct Line {
             return p1;
         }
         // Vector pointing from the segment's start point (p1) toward its end point (p2)
-        Point2D direction = p2 - p1;
+        Vector2D direction = p2 - p1;
         // Vector pointing from the segment's start point (p1) toward the input point (p)
-        Point2D toPoint = p - p1;
+        Vector2D toPoint = p - p1;
 
         // Determines how far to move from p1 toward p2 to reach the closest point to p
         // fractionAlongSegment = 0 means p1, fractionAlongSegment = 1 means p2
@@ -137,9 +140,9 @@ struct Line {
     // Returns true and sets crossingPoint if the segments intersect within both of their bounds,
     // returns false (leaving crossingPoint unset) if they are parallel/collinear or don't overlap.
     bool Crosses(Line other, Point2D& crossingPoint) const {
-        Point2D thisDirection = p2 - p1;
-        Point2D otherDirection = other.p2 - other.p1;
-        Point2D diff = other.p1 - p1;  // the offset between line 1 and where line 2 starts
+        Vector2D thisDirection = p2 - p1;
+        Vector2D otherDirection = other.p2 - other.p1;
+        Vector2D diff = other.p1 - p1;  // the offset between line 1 and where line 2 starts
 
         // Cross product of the two direction vectors; zero means the segments are parallel
         // so there is no single crossing point
